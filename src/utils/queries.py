@@ -1,10 +1,17 @@
-from correction.drift import *
-from correction.linearity import *
-from correction.methanol import *
-from correction.vsmow import *
 import os
-from base_functions import append_to_log
-from queries import *
+import datetime 
+from utils.corrections.linearity import *
+from utils.corrections.methanol import *
+from utils.corrections.vsmow import *
+
+def append_to_log(log_file_path, log_message):
+    """
+    Add entry to log file.
+    """
+    with open(log_file_path, "a") as log_file:
+        current_datetime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        initial_message = f"Log file created at {current_datetime}\n"
+        log_file.write(log_message + "; " + str(current_datetime) + "\n")
 
 
 def pos_response(response):
@@ -23,6 +30,11 @@ def query_project_name():
 def query_file_location():
     while True:
         loc = input("\nProvide the full path of the GC-IRMS datafile (as .csv).\n")
+        
+        # Remove single quotes if present at both the start and end of the input
+        if loc.startswith("'") and loc.endswith("'"):
+            loc = loc[1:-1]
+        
         if os.path.isfile(loc) and loc.endswith(".csv"):
             return loc
         else:
@@ -42,20 +54,6 @@ def isotope_type():
             else:
                 isotope = "dD"
             return isotope
-        else:
-            print("\nInvalid response\n")
-
-
-def q_drift(log_file_path):
-    """
-    Ask the user for their choice of correction and keep asking until a valid response is given.
-    """
-    while True:  # Start an infinite loop
-        choice = input("\nApply drift to correction? (Y/N)\n")
-
-        if choice in ["yes", "y", "true", "t", "no", "n", "false", "f"]:
-            return choice
-            append_to_log(log_file_path, f"Drift application: {choice}")
         else:
             print("\nInvalid response\n")
 
@@ -88,3 +86,11 @@ def q_methylation(unknown, stds, log_file_path):  # , user_choice, response):
             print("\nInvalid response. Try again.\n")
     append_to_log(log_file_path, f"Methanol δD: {meth_dD} ± {meth_std} ‰")
     return unknown, stds
+
+def q_original_phthalic_value():
+    o_ph_dD = input("Enter isotopic value of phthalic acid: ")
+    return o_ph_dD
+
+def q_output():
+    o_fp = input("Provide a folder path for the output data:\n")
+    return o_fp

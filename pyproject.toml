@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "OSIBL-correction"
+version = "0.1.0"
+description = ""
+authors = ["Gerard Otiniano <gerardotiniano@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

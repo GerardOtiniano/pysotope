@@ -1,10 +1,9 @@
 import os
-from correction.drift import *
-from correction.linearity import *
-from correction.methanol import *
-from correction.vsmow import *
-from outliers.raw_standards import *
-from outliers.sample import *
+from utils.corrections.drift import *
+from utils.corrections.linearity import *
+from utils.corrections.methanol import *
+from utils.corrections.vsmow import *
+from outliers.outliers import *
 from base_functions import *
 from queries import *
 from regression import *
