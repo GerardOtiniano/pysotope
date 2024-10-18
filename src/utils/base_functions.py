@@ -76,6 +76,7 @@ def import_data(data_location, folder_path, log_file_path, isotope):
         linearirty_std - dataframe with linearity standards
         drif_std       - dataframe with drift standards
         unknown        - dataframe with sample data
+        pame           - boolian identifying presence of pames in dataset
     ~GAO~ 12/4/2023
     """
     # Create log file

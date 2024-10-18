@@ -1,7 +1,8 @@
-# /usr/bin/env python3
-import os
-from utils.corrections.drift import *
-from utils.corrections.linearity import *
+# src/OSIBL_correction
+import os 
+
+from .utils.corrections.drift import *
+from .utils.corrections.linearity import *
 from utils.corrections.methanol import *
 from utils.corrections.vsmow import *
 from utils.outliers.outliers import *
@@ -57,7 +58,6 @@ def GCIRMS_data_cal(pame=False, user_linearity_conditions = False):
         samples, standards = q_methylation(samples, standards, log_file_path);
 
     # PAME
-    print(pame)
     if pame:
         samples, pame_unknown = calculate_methanol_dD(samples, isotope, log_file_path)
         
