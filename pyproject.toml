@@ -18,5 +18,5 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.packages]
 packages = [
-    { include = "osibl_correction", from = "src" }
+    { include = "OSIBL_correction", from = "src" }
 ]
