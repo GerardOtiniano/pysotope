@@ -1,21 +1,14 @@
 [tool.poetry]
-name = "OSIBL_correction"
+name = "osibl-correction"
 version = "0.1.0"
-description = "A package for processing OSIBL IRMS data."
+description = ""
 authors = ["Gerard Otiniano <gerardotiniano@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pandas = "2.2.2"
-matplotlib = "3.8.4"
-numpy = "1.26.4"
-statsmodels = "0.14.4"
+
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.packages]
-include = "OSIBL_correction"
-from = "src"
