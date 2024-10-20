@@ -3,14 +3,14 @@ import os
 
 from .utils.corrections.drift import *
 from .utils.corrections.linearity import *
-from utils.corrections.methanol import *
-from utils.corrections.vsmow import *
-from utils.outliers.outliers import *
-from utils.queries import *
-from utils.regression import *
-from utils.uncertainty_and_output import *
-from utils.figures import *
-from utils.base_functions import *
+from .utils.corrections.methanol import *
+from .utils.corrections.vsmow import *
+from .utils.outliers.outliers import *
+from .utils.queries import *
+from .utils.regression import *
+from .utils.uncertainty_and_output import *
+from .utils.figures import *
+from .utils.base_functions import *
 
 def GCIRMS_data_cal(pame=False, user_linearity_conditions = False):
     import pandas as pd
