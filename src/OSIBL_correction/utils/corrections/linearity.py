@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
-from utils.queries import *
-from utils.figures import *
+from . .queries import *
+from . .queries import neg_response
+from . .figures import *
 from IPython.display import clear_output
 from statsmodels.sandbox.regression.predstd import wls_prediction_std
 

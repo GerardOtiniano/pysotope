@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import pandas as pd
-from utils.figures import total_dD_correction_plot
+from .figures import total_dD_correction_plot
 
 def output_results(raw_unknown, unknown, sd, unknown_pame, folder_path, fig_path, res_path, isotope, pame):
     # Define column name mappings for output CSV files

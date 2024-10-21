@@ -1,4 +1,4 @@
-from utils.base_functions import append_to_log
+from .base_functions import append_to_log
 import statsmodels.api as sm
 import numpy as np
 

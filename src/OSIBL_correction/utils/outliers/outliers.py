@@ -6,8 +6,8 @@ import os
 from scipy.optimize import curve_fit
 from IPython.display import clear_output
 from scipy.stats import zscore
-from utils.queries import *
-from utils.base_functions import *
+from . .queries import *
+from . .base_functions import *
 
 # Raw Standards
 def remove_standards_PA(l,d):

@@ -4,7 +4,9 @@ import time
 import os
 import numpy as np
 from matplotlib.dates import date2num
-from utils.queries import *
+from .queries import *
+from .queries import query_file_location, query_stds
+from . .definitions.standards import *
 
 def make_correction_df():
     correction_log_data = {
@@ -67,7 +69,7 @@ def append_to_log(log_file_path, log_message):
         initial_message = f"Log file created at {current_datetime}\n"
         log_file.write(log_message)# + "; "+str(current_datetime)+"\n")
         
-def import_data(data_location, folder_path, log_file_path, isotope):
+def import_data(data_location, folder_path, log_file_path, isotope, alt_stds):
     """
     Import .csv file from GCIRMs - default .csv file from GCIRMS creates issues with header. The function assigns new header names,
     creates a date-time format for linear regression, identifieds standards, and isolates standards and samples.
@@ -115,24 +117,28 @@ def import_data(data_location, folder_path, log_file_path, isotope):
     else: pame = False
     
     # Seperate samples, H3+, drift, and linearity standards
-    linearity_std = df[df['Identifier 1'].str.contains('C20') & df['Identifier 1'].str.contains('C28')] # Isolate linearity standards  
-    linearity_std = linearity_std[linearity_std.chain.isin(["C20","C28"])]
-    append_to_log(log_file_path, "Number of linearity standards analyzed: " + str(len(linearity_std[linearity_std.chain == "C28"])))
-
-    drift_std = df[df['Identifier 1'].str.contains('C18') & df['Identifier 1'].str.contains('C24')] # Isolate drift standards
-    drift_std = drift_std[drift_std.chain.isin(["C18","C24"])]
-    append_to_log(log_file_path, "Number of Drift standards analyzed: " + str(len(drift_std[drift_std.chain == "C24"])))
+    linearity_chain_lengths, drift_chain_lengths = query_stds(alt_stds) # Check and implement alternative standards
     
+    linearity_std = df[
+        df['Identifier 1'].str.contains(linearity_chain_lengths[0]) & df['Identifier 1'].str.contains(linearity_chain_lengths[1])]
+    linearity_std = linearity_std[linearity_std.chain.isin(linearity_chain_lengths)]
+    append_to_log(log_file_path, f"Number of linearity standards analyzed: {len(linearity_std[linearity_std.chain == linearity_chain_lengths[1]])}")
+
+    drift_std = df[df['Identifier 1'].str.contains(drift_chain_lengths[0]) &df['Identifier 1'].str.contains(drift_chain_lengths[1])]
+    drift_std = drift_std[drift_std.chain.isin(drift_chain_lengths)]
+    append_to_log(log_file_path, f"Number of Drift standards analyzed: {len(drift_std[drift_std.chain == drift_chain_lengths[1]])}")
+
     # Remove first two drift runs
     drift_std = drift_std.sort_values('date-time_true')
     unique_time_signatures = drift_std["date-time"].unique() # identify unique drift runs
-    #time_signatures_to_remove = unique_time_signatures[6:] # find time signature of first two runs
     time_signatures_to_remove = unique_time_signatures[:2] # Modified Jan 7, 2024 - line above is original method, but didnt work?
     drift_std = drift_std[~drift_std["date-time"].isin(time_signatures_to_remove)] # Remove first two runs - OSIBL ignores for variance
     append_to_log(log_file_path, "First two drift standards ignored.")
-    mask    = (df['Identifier 1'].str.contains('C18') & df['Identifier 1'].str.contains('C24'))
+    
+    
+    mask    = (df['Identifier 1'].str.contains(linearity_chain_lengths[0]) & df['Identifier 1'].str.contains(linearity_chain_lengths[1]))
     unknown = df[~mask]
-    mask    = (unknown['Identifier 1'].str.contains('C20') & unknown['Identifier 1'].str.contains('C28'))
+    mask    = (unknown['Identifier 1'].str.contains(drift_chain_lengths[0]) & unknown['Identifier 1'].str.contains(drift_chain_lengths[1]))
     unknown = unknown[~mask]
     unknown = unknown[~unknown['Identifier 1'].str.contains('H3+')]
     rt_dict = ask_user_for_rt(log_file_path)
@@ -147,8 +153,11 @@ def import_data(data_location, folder_path, log_file_path, isotope):
     correction_log = make_correction_df()
     return linearity_std, drift_std, unknown, correction_log, pame
 
-def create_folder(name, isotope, directory):
-    folder_path = os.path.join(directory, name)
+def create_folder(isotope):
+    input_file = query_file_location() # Location of input file
+    project_name = "Output "+str(os.path.basename(input_file))
+    directory = os.path.dirname(input_file)
+    folder_path = os.path.join(directory, project_name)
     log_file_path = create_log_file(folder_path)
     if isotope == "dD": iso_name = "δD"
     else: iso_name = "δC"
@@ -161,10 +170,7 @@ def create_folder(name, isotope, directory):
     
     results_path = os.path.join(folder_path, 'Results')
     os.makedirs(results_path, exist_ok=True)
-
-    locate = query_file_location() # Location of file
-    
-    return folder_path, fig_path, results_path, locate, log_file_path
+    return folder_path, fig_path, results_path, input_file, log_file_path
 
 def create_subfolder(folder_path, name):
     subf_path = os.path.join(folder_path, name)

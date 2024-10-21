@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import os
-from utils.regression import *
+from .regression import *
 
 
 def std_plot(lin, drift, folder_path, fig_path, isotope, cutoff_line=None, regress=False, dD = "dD"):

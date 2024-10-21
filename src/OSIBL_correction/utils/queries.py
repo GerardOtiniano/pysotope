@@ -1,8 +1,6 @@
 import os
 import datetime 
-from utils.corrections.linearity import *
-from utils.corrections.methanol import *
-from utils.corrections.vsmow import *
+from . .definitions.standards import *
 
 def append_to_log(log_file_path, log_message):
     """
@@ -24,7 +22,7 @@ def neg_response(response):
 
 def query_project_name():
     project_name = input("\nProvide the project name.\n")
-    return project_name
+    return project_name 
 
 
 def query_file_location():
@@ -39,7 +37,6 @@ def query_file_location():
             return loc
         else:
             print("\nFile does not exist or is not a .csv file. Try again.\n")
-
 
 def isotope_type():
     """
@@ -57,6 +54,30 @@ def isotope_type():
         else:
             print("\nInvalid response\n")
 
+def query_stds(alt_stds):
+    
+    "Ask user for chain lengths in standards"
+    if alt_stds:
+        while True:
+            usr_lin_std = input("Which chain lengths are included in the linearity standards? (comma-separated, e.g., C20, C28): ")
+            # Split the input and check the length
+            linearity_chain_lengths = [length.strip() for length in usr_lin_std.split(',')]
+            if len(linearity_chain_lengths) == 2:
+                break  # Exit loop if exactly two chain lengths are provided
+            else:
+                print("Error: You must provide exactly two chain lengths. Please try again.")
+        while True:
+            usr_drift_std = input("Which chain lengths are included in the drift standards? (comma-separated, e.g., C18, C24): ")
+            # Split the input and check the length
+            drift_chain_lengths = [length.strip() for length in usr_drift_std.split(',')]
+            if len(drift_chain_lengths) == 2:
+                break  # Exit loop if exactly two chain lengths are provided
+            else:
+                print("Error: You must provide exactly two chain lengths. Please try again.")
+    else:
+        linearity_chain_lengths = default_stds["linearity_stds"]
+        drift_chain_lengths = default_stds["drift_stds"]
+    return linearity_chain_lengths, drift_chain_lengths
 
 def lin_response(log_file_path):
     valid_responses = ["yes", "y", "true", "t", "no", "n", "false", "f"]
@@ -70,6 +91,7 @@ def lin_response(log_file_path):
 
 
 def q_methylation(unknown, stds, log_file_path):  # , user_choice, response):
+    from .corrections.methanol import methyl_correction
     while True:
         response = input("\nMethanol δD is -72.5 ± 3.1 ‰. Is this correct? (Y/N)\n").lower()
         if pos_response(response):

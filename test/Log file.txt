@@ -1,0 +1,17 @@
+Log file created at 2024-10-19 21:03:04
+Python version: 3.12.2
+pandas version: 2.2.2
+matplotlib version: 3.8.4
+numpy version: 1.26.4
+scipy version: 1.13.1
+statsmodels version: 0.14.4
+sklearn (scikit-learn) version: 1.4.2
+sklearn (scikit-learn) version: 1.4.2
+IPython version: 8.27.0
+
+
+Isotope type: δDNumber of linearity standards analyzed: 21Number of Drift standards analyzed: 8First two drift standards ignored.User opted not to identify chains.Applied weighted least squares regression functionDrift correction equation: δD = (time)(7.0177756553507304+-13.813254061409609
+r2 = 0.8583165060368423
+p = 1.4964470919030309e-05User applied drift correction.Linearity application application: yApplied weighted least squares regression functionMinimum peak area to derive linearity correction: 0.0Applied weighted least squares regression functionLinearity correction equation: δD = (area)(-0.16218247110349535+8.58382493789086
+r2 = 0.004742901135771915
+p = 0.6647487510528616Linearity correction is noramlized to the δD values from the top 20% area of linearity standards.Area = 7.0 to 7.854δD = 3.101978480281673 to 15.622648751616907Number of drift standards exluded because of below threshold area: 0Number of linearity standards exluded because of below threshold area: 0Number of samples exluded because of below threshold area: 0Applied weighted least squares regression functionMethanol δD: -72.5 ± 3.1 ‰; 2024-10-19 21:03:15

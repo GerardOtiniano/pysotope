@@ -12,7 +12,7 @@ from .utils.uncertainty_and_output import *
 from .utils.figures import *
 from .utils.base_functions import *
 
-def GCIRMS_data_cal(pame=False, user_linearity_conditions = False):
+def GCIRMS_data_cal(pame=False, user_linearity_conditions = False, alt_stds = False):
     import pandas as pd
     import matplotlib.pyplot as plt
     import numpy as np
@@ -29,12 +29,12 @@ def GCIRMS_data_cal(pame=False, user_linearity_conditions = False):
 
     # Query isotope system
     isotope = "dD" # isotope_type()
-    project_name = 'test' # query_project_name()
-    directory = os.path.dirname(project_name)
-
-    folder_path, fig_path, results_path, loc, log_file_path = create_folder(project_name, isotope, directory)
-
-    lin_std, drift_std, samples, correction_log, pame = import_data(loc, folder_path, log_file_path, isotope=isotope)
+    
+    # Setup output folder
+    folder_path, fig_path, results_path, loc, log_file_path = create_folder(isotope)
+    
+    # Import data
+    lin_std, drift_std, samples, correction_log, pame = import_data(loc, folder_path, log_file_path, isotope, alt_stds)
     uncorrected_samples = samples.copy()
 
     # Run standard plots for area

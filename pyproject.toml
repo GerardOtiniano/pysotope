@@ -1,9 +1,10 @@
 [tool.poetry]
-name = "osibl-correction"
+name = "osibl_correction"
 version = "0.1.0"
 description = ""
 authors = ["Gerard Otiniano <gerardotiniano@gmail.com>"]
 readme = "README.md"
+packages = [{include = "OSIBL_correction", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -12,8 +13,3 @@ python = "^3.10"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.packages]
-packages = [
-    { include = "OSIBL_correction", from = "src" }
-]
