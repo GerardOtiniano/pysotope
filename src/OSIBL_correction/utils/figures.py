@@ -41,6 +41,7 @@ def std_plot(lin, drift, folder_path, fig_path, isotope, cutoff_line=None, regre
     if cutoff_line is not None:
         ax[1].axvline(cutoff_line[0], c='red', linestyle='--')
         ax[3].axvline(cutoff_line[1], c='red', linestyle='--')
+    # plt.show(block=True)
     plt.savefig(os.path.join(fig_path, 'Standards Raw.png'), dpi=300, bbox_inches='tight')
     plt.show()
     
@@ -50,7 +51,7 @@ def verify_lin_plot(lin, fig_path, dD_id, log_file_path,cutoff_line, isotope, re
     ~GAO~12/4/2023
     """
     cutoff_line=float(cutoff_line)
-    plt.figure(figsize=[5, 3])
+    fig = plt.figure(figsize=[5, 3])
     above_cutoff = lin[lin["area"] >= cutoff_line]
     plt.scatter(above_cutoff["area"], above_cutoff[dD_id], alpha=0.4, ec='k', s=80, c='orange', label = "Above peak area threshold.")
     below_cutoff = lin[lin["area"] < cutoff_line]

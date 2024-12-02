@@ -29,7 +29,6 @@ def process_linearity_correction(samp, drift, lin_std, user_choice, correction_l
         #temp[user_choice] -= temp[user_choice].mean() # For gls regression
         temp[user_choice] -= temp[user_choice].min()-1
         norm = pd.concat([norm, temp])
-        
     response = lin_response(log_file_path)
     if neg_response(response):
         print("\nSkipping linearity correction.\n")
@@ -57,9 +56,9 @@ def process_linearity_correction(samp, drift, lin_std, user_choice, correction_l
     if pos_response(user_input):
         append_to_log(log_file_path, "Minimum peak area to derive linearity correction: "+str(chain_corr_val))
         lin_std, drift, samp, excluded_drift, excluded_lin_std, excluded_samp  = linearity_correction(drift, samp, lin_std, norm, chain_corr_val, dD_id, folder_path, fig_path, log_file_path=log_file_path)
-        append_to_log(log_file_path, "Number of drift standards exluded because of below threshold area: "+str(len(excluded_drift)))
-        append_to_log(log_file_path, "Number of linearity standards exluded because of below threshold area: "+str(len(excluded_lin_std)))
-        append_to_log(log_file_path, "Number of samples exluded because of below threshold area: "+str(len(excluded_samp)))
+        append_to_log(log_file_path, "Number of drift standards excluded because of below threshold area: "+str(len(excluded_drift)))
+        append_to_log(log_file_path, "Number of linearity standards excluded because of below threshold area: "+str(len(excluded_lin_std)))
+        append_to_log(log_file_path, "Number of samples excluded because of below threshold area: "+str(len(excluded_samp)))
         # Save excluded samples if any
         if not excluded_drift.empty or not excluded_lin_std.empty or not excluded_samp.empty:
             subfolder = create_subfolder(folder_path, "Excluded_Data")
@@ -101,8 +100,12 @@ def linearity_correction(drift, samp, lin_std, lin_norm, area_cutoff, dD_id, fol
     excluded_samp = samp[samp['area'] < area_cutoff]
 
     # Store and remove excluded unknown
-    m_d, b_d, r_squared, p_value, std_error, model = wls_regression(filtered_lin_norm['area'], filtered_lin_norm[dD_id], log_file_path)
-
+    y_shift = filtered_lin_norm[dD_id] + np.abs(filtered_lin_norm[dD_id].min())+1 # Shift isotope values so all values are positive for log-transform
+    y_log = np.log(y_shift)
+    m_d, b_d, r_squared, p_value, std_error, model = wls_regression(filtered_lin_norm['area'], y_log, log_file_path)
+    print("Debug linearity correction", m_d, b_d, r_squared, p_value, std_error)
+    #  m_d, b_d, r_squared, p_value, std_error, model = wls_regression(filtered_lin_norm['area'], filtered_lin_norm[dD_id], log_file_path)
+    
     append_to_log(log_file_path, "Linearity correction equation: δD = (area)("+str(m_d)+"+"+str(b_d)+"\nr2 = "+str(r_squared)+"\np = "+str(p_value))
     new_time_rel = sm.add_constant(np.array(filtered_lin_norm['area']))
     results = model.predict(new_time_rel)

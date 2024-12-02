@@ -1,6 +1,6 @@
 import os
 import datetime 
-from . .definitions.standards import *
+from .define_standards import open_editor 
 
 def append_to_log(log_file_path, log_message):
     """
@@ -54,30 +54,10 @@ def isotope_type():
         else:
             print("\nInvalid response\n")
 
-def query_stds(alt_stds):
-    
-    "Ask user for chain lengths in standards"
-    if alt_stds:
-        while True:
-            usr_lin_std = input("Which chain lengths are included in the linearity standards? (comma-separated, e.g., C20, C28): ")
-            # Split the input and check the length
-            linearity_chain_lengths = [length.strip() for length in usr_lin_std.split(',')]
-            if len(linearity_chain_lengths) == 2:
-                break  # Exit loop if exactly two chain lengths are provided
-            else:
-                print("Error: You must provide exactly two chain lengths. Please try again.")
-        while True:
-            usr_drift_std = input("Which chain lengths are included in the drift standards? (comma-separated, e.g., C18, C24): ")
-            # Split the input and check the length
-            drift_chain_lengths = [length.strip() for length in usr_drift_std.split(',')]
-            if len(drift_chain_lengths) == 2:
-                break  # Exit loop if exactly two chain lengths are provided
-            else:
-                print("Error: You must provide exactly two chain lengths. Please try again.")
-    else:
-        linearity_chain_lengths = default_stds["linearity_stds"]
-        drift_chain_lengths = default_stds["drift_stds"]
-    return linearity_chain_lengths, drift_chain_lengths
+def query_stds(alt_stds, isotope):
+    standards_df = open_editor(alt_stds, isotope)
+    return standards_df
+
 
 def lin_response(log_file_path):
     valid_responses = ["yes", "y", "true", "t", "no", "n", "false", "f"]

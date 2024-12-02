@@ -2,14 +2,13 @@ from .base_functions import append_to_log
 import statsmodels.api as sm
 import numpy as np
 
-def wls_regression(x, y, log_file_path, weights=None): #should be wls_regression - changing it here so that wls can be used without renaming ever instance
+def wls_regression(x, y, log_file_path): #should be wls_regression - changing it here so that wls can be used without renaming ever instance
     """
-    Weighted Least Squares Regression Model Function.
+    Weighted Least Squares Regression Model Function. Weights are calcualted as the inverse of the amplitude. 
 
     Parameters:
     - x: Independent variable(s), should be a 1D or 2D array-like structure.
     - y: Dependent variable, should be a 1D array-like structure.
-    - weights: An array of weights, should be the same length as y. If None, performs OLS.
 
     Returns:
     - slope: Slope coefficient(s) of the model.

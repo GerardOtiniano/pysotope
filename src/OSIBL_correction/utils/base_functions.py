@@ -6,7 +6,6 @@ import numpy as np
 from matplotlib.dates import date2num
 from .queries import *
 from .queries import query_file_location, query_stds
-from . .definitions.standards import *
 
 def make_correction_df():
     correction_log_data = {
@@ -69,7 +68,13 @@ def append_to_log(log_file_path, log_message):
         initial_message = f"Log file created at {current_datetime}\n"
         log_file.write(log_message)# + "; "+str(current_datetime)+"\n")
         
-def import_data(data_location, folder_path, log_file_path, isotope, alt_stds):
+def chain_subsetrer(std_df, std_meta, std_type):
+    chains = list(std_meta[std_meta['type']==std_type]['chain length']) 
+    df = std_df[std_df['Identifier 1'].str.contains(chains[0]) & std_df['Identifier 1'].str.contains(chains[1])]
+    df = df[df.chain.isin(chains)]
+    return df, chains
+        
+def import_data(data_location, folder_path, log_file_path, isotope, standards_df):
     """
     Import .csv file from GCIRMs - default .csv file from GCIRMS creates issues with header. The function assigns new header names,
     creates a date-time format for linear regression, identifieds standards, and isolates standards and samples.
@@ -117,15 +122,9 @@ def import_data(data_location, folder_path, log_file_path, isotope, alt_stds):
     else: pame = False
     
     # Seperate samples, H3+, drift, and linearity standards
-    linearity_chain_lengths, drift_chain_lengths = query_stds(alt_stds) # Check and implement alternative standards
-    
-    linearity_std = df[
-        df['Identifier 1'].str.contains(linearity_chain_lengths[0]) & df['Identifier 1'].str.contains(linearity_chain_lengths[1])]
-    linearity_std = linearity_std[linearity_std.chain.isin(linearity_chain_lengths)]
+    linearity_std, linearity_chain_lengths = chain_subsetrer(df, standards_df, "linearity")
     append_to_log(log_file_path, f"Number of linearity standards analyzed: {len(linearity_std[linearity_std.chain == linearity_chain_lengths[1]])}")
-
-    drift_std = df[df['Identifier 1'].str.contains(drift_chain_lengths[0]) &df['Identifier 1'].str.contains(drift_chain_lengths[1])]
-    drift_std = drift_std[drift_std.chain.isin(drift_chain_lengths)]
+    drift_std, drift_chain_lengths = chain_subsetrer(df, standards_df, "drift")
     append_to_log(log_file_path, f"Number of Drift standards analyzed: {len(drift_std[drift_std.chain == drift_chain_lengths[1]])}")
 
     # Remove first two drift runs
@@ -134,7 +133,6 @@ def import_data(data_location, folder_path, log_file_path, isotope, alt_stds):
     time_signatures_to_remove = unique_time_signatures[:2] # Modified Jan 7, 2024 - line above is original method, but didnt work?
     drift_std = drift_std[~drift_std["date-time"].isin(time_signatures_to_remove)] # Remove first two runs - OSIBL ignores for variance
     append_to_log(log_file_path, "First two drift standards ignored.")
-    
     
     mask    = (df['Identifier 1'].str.contains(linearity_chain_lengths[0]) & df['Identifier 1'].str.contains(linearity_chain_lengths[1]))
     unknown = df[~mask]

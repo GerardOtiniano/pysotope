@@ -11,6 +11,7 @@ from .utils.regression import *
 from .utils.uncertainty_and_output import *
 from .utils.figures import *
 from .utils.base_functions import *
+from .utils.define_standards import open_editor 
 
 def GCIRMS_data_cal(pame=False, user_linearity_conditions = False, alt_stds = False):
     import pandas as pd
@@ -33,8 +34,11 @@ def GCIRMS_data_cal(pame=False, user_linearity_conditions = False, alt_stds = Fa
     # Setup output folder
     folder_path, fig_path, results_path, loc, log_file_path = create_folder(isotope)
     
+    # Set standards
+    standards_df = query_stds(alt_stds, isotope)
+    
     # Import data
-    lin_std, drift_std, samples, correction_log, pame = import_data(loc, folder_path, log_file_path, isotope, alt_stds)
+    lin_std, drift_std, samples, correction_log, pame = import_data(loc, folder_path, log_file_path, isotope, standards_df)
     uncorrected_samples = samples.copy()
 
     # Run standard plots for area
@@ -51,7 +55,7 @@ def GCIRMS_data_cal(pame=False, user_linearity_conditions = False, alt_stds = Fa
     drift_std, correction_log, lin_std, samples = process_linearity_correction(samples, drift_std, lin_std, dD_temp, correction_log, folder_path, fig_path, isotope, user_linearity_conditions, log_file_path=log_file_path)
  
     # VSMOW correction
-    samples, standards = vsmow_correction(samples, lin_std, drift_std, correction_log, folder_path, fig_path, log_file_path, isotope)
+    samples, standards = vsmow_correction(samples, lin_std, drift_std, correction_log, folder_path, fig_path, log_file_path, isotope, standards_df)
 
     # Methylation Correction
     if isotope =="dD":
