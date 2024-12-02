@@ -1,1 +1,1 @@
-OSIBL-correction (v.0.1.0)
+pysotope (v.0.1.0)
