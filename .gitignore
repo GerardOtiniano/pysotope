@@ -1,2 +1,3 @@
 .spyproject/config
 .DS_Store
+.dist
