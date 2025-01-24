@@ -1,3 +1,4 @@
 .spyproject/config
 .DS_Store
 .dist
+src/scrap.py

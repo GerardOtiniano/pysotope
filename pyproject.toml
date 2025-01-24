@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pysotope"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 authors = ["Gerard Otiniano <gerardotiniano@gmail.com>"]
 readme = "README.md"
