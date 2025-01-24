@@ -13,7 +13,7 @@ from .utils.figures import *
 from .utils.base_functions import *
 from .utils.define_standards import open_editor 
 
-def GCIRMS_data_cal(pame=False, user_linearity_conditions = False, alt_stds = False):
+def iso_process(pame=False, user_linearity_conditions = False, alt_stds = False):
     import pandas as pd
     import matplotlib.pyplot as plt
     import numpy as np
