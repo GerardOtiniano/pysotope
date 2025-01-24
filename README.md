@@ -4,13 +4,23 @@ Pysotope is an open-source package meant to processes raw data measured from the
 
 Note: pysotope was tested using jupyter lab and jupyter notebook. Compatibility with alternative python IDEs may require custom configuration.
 
-## Corrections
+## Data Corrections
 
 - **Drift** (weighted means least squared)
 - **Linearity** (log transformed)
 - **Methanol** derivitization - user is asked for methanol values
 - **PAME** - calculates the isotopic composition of PAME, if run in the sequence (set argument pame=True)
 - **VSMOW** - calculated using C18, C20, and C28 standards, tested on C24 standard.
+
+## Features
+
+- Data output is split into mean of samples, individual samples, and standards in three .csv files
+- Uncertainty/error associted with each correction is automatically calculated and included in each data output. 
+- Compatible with hydrogen and carbon isotope measurements
+- Modifiable standard values 
+- Output log contains all user decisions, equations used for corrections, descriptive statistics, and time codes for user actions
+- Figures are saved locally
+- Users can check for potential outliers in their data and remove them from the output
 
 ## Installation
 

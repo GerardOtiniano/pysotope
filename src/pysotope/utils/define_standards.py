@@ -13,7 +13,7 @@ vsmow_dD = {
     "isotope value":  [-206.2, -166.7, -89.28190994, -179.3],
     "std":            [1.7, 0.3, 1.062744893, 1.7],
     "n":              [5, 3, 924, 5],
-    "accuracy check": ["False", "False", "False", "True"]}
+    "VSMOW accuracy check": ["False", "False", "False", "True"]}
 
 vsmow_dC = {
         "type":           ["drift", "linearity", "drift"],
@@ -21,7 +21,7 @@ vsmow_dC = {
         "isotope value" : [-23.24, -30.68, -26.57],
         "std":            [0.01, 0.02, 0.02],
         "n":              [5,3,5],
-        "accuracy check": ["False", "False", "True"]}
+        "VSMOW accuracy check": ["False", "False", "True"]}
         
 class Editor:
     def __init__(self, alt_stds, isotope):
