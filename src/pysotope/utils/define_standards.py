@@ -49,7 +49,7 @@ class Editor:
             return
         
         # Define columns
-        columns = ["type", "chain length", isotope_header, "standard deviation", "n", "accuracy check"]
+        columns = ["type", "chain length", isotope_header, "standard deviation", "n", "VSMOW accuracy check"]
         
         # Create column headers
         for j, column in enumerate(columns):
@@ -78,7 +78,7 @@ class Editor:
                 elif j == 4:  # n
                     entry.insert(0, self.data_dict["n"][i])
                 elif j == 5:  # accuracy check
-                    entry.insert(0, self.data_dict["accuracy check"][i])
+                    entry.insert(0, self.data_dict["VSMOW accuracy check"][i])
             
                 row_entries.append(entry)
     
@@ -96,7 +96,7 @@ class Editor:
             "isotope value": [],  # Will be renamed based on isotope type
             "std": [],
             "n": [],
-            "accuracy check": []
+            "VSMOW accuracy check": []
         }
     
         # Determine the correct column name based on isotope type
@@ -119,9 +119,9 @@ class Editor:
                 # Handle "accuracy check" as a boolean
                 accuracy_value = self.entries[i][5].get()
                 if accuracy_value.lower() == "true":
-                    data["accuracy check"].append(True)
+                    data["VSMOW accuracy check"].append(True)
                 elif accuracy_value.lower() == "false":
-                    data["accuracy check"].append(False)
+                    data["VSMOW accuracy check"].append(False)
                 else:
                     raise ValueError(f"Invalid accuracy check value: {accuracy_value}")
         except ValueError as e:
@@ -151,7 +151,7 @@ def open_editor(alt_stds, isotope):
                 "δD": vsmow_dD["isotope value"],
                 "std": vsmow_dD["std"],
                 "n": vsmow_dD["n"],
-                "accuracy check": [val.lower() == "true" for val in vsmow_dD["accuracy check"]]
+                "VSMOW accuracy check": [val.lower() == "true" for val in vsmow_dD["VSMOW accuracy check"]]
             }
             return pd.DataFrame(data)
         elif isotope == "dC":
@@ -161,7 +161,7 @@ def open_editor(alt_stds, isotope):
                 "δ13C": vsmow_dC["isotope value"],
                 "std": vsmow_dC["std"],
                 "n": vsmow_dC["n"],
-                "accuracy check": [val.lower() == "true" for val in vsmow_dC["accuracy check"]]
+                "VSMOW accuracy check": [val.lower() == "true" for val in vsmow_dC["VSMOW accuracy check"]]
             }
             return pd.DataFrame(data)
         else:

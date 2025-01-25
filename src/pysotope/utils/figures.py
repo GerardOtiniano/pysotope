@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import os
 from .regression import *
+from .curve_fitting import *
 
 
 def std_plot(lin, drift, folder_path, fig_path, isotope, cutoff_line=None, regress=False, dD = "dD"):
@@ -42,6 +43,7 @@ def std_plot(lin, drift, folder_path, fig_path, isotope, cutoff_line=None, regre
         ax[1].axvline(cutoff_line[0], c='red', linestyle='--')
         ax[3].axvline(cutoff_line[1], c='red', linestyle='--')
     # plt.show(block=True)
+    plt.tight_layout()
     plt.savefig(os.path.join(fig_path, 'Standards Raw.png'), dpi=300, bbox_inches='tight')
     plt.show()
     
@@ -63,19 +65,41 @@ def verify_lin_plot(lin, fig_path, dD_id, log_file_path,cutoff_line, isotope, re
     plt.xlabel('Peak Area (mVs)')
     
     temp = lin[lin.area > cutoff_line]   
-    slope, intercept, r_squared, p_value, std_error, model = wls_regression(temp['area'], temp[dD_id],log_file_path)
-    plt.plot([temp.area.min(), temp.area.max()], [temp.area.min() * slope + intercept,
-                                                           temp.area.max() * slope + intercept], c='k', linestyle='--')
-    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), frameon=False, fancybox=False, shadow=True, ncol=2)
+    # slope, intercept, r_squared, p_value, std_error, model = wls_regression(temp['area'], temp[dD_id],log_file_path)
+    # plt.plot([temp.area.min(), temp.area.max()], [temp.area.min() * slope + intercept,
+    #                                                        temp.area.max() * slope + intercept], c='k', linestyle='--')
+    ########################################################################################################################
+    # Fit both exponential and log
+    xdata = above_cutoff["area"]
+    ydata = above_cutoff[dD_id]
+    # print(ydata_shift)
+    # print(xdata)
+    best_model, popt, sse, pcov = fit_and_select_best(xdata, ydata)
+    # Generate smooth x for plotting
+    x_fit = np.linspace(xdata.min(), xdata.max(), 200)
+    if best_model == "exponential":
+        y_fit = exp_func(x_fit, *popt)
+        model_label = "Exponential Fit"
+    else:
+        y_fit = log_func(x_fit, *popt)
+        model_label = "Logarithmic Fit"
+    # Plot the chosen best-fit curve
+    plt.plot(x_fit, y_fit, 'k--', label=model_label)
+    ########################################################################################################################
     
-    # Plot logarithmic best-fit line
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), frameon=False, fancybox=False, shadow=True, ncol=2)
+
+    plt.tight_layout()
     plt.savefig(os.path.join(fig_path, 'Linearity.png'), bbox_inches='tight')
     plt.show()
-    print("\nRegression statistics drift standards:")
-    print(f"Linear equation: {label} = ({slope:.2f})(time) + {intercept:.2f}")
-    print(f"Adjusted R²: {r_squared:.2f}")
-    print(f"P-value: {p_value:.2f}")
-    print(f"Standard Error: {std_error:.2f}")        
+    print("\nRegression statistics linearity standards:")
+    print(f"Best fit equation: {best_model}")
+    
+    # print("\nRegression statistics drift standards:")
+    # print(f"Linear equation: {label} = ({slope:.2f})(time) + {intercept:.2f}")
+    # print(f"Adjusted R²: {r_squared:.2f}")
+    # print(f"P-value: {p_value:.2f}")
+    # print(f"Standard Error: {std_error:.2f}")        
       
 def total_dD_correction_plot(uncorrected_unknown, unknown , folder_path, fig_path, isotope):
     unique_chains = unknown['Chain Length'].unique()

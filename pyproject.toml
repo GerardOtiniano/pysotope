@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "pysotope"
-version = "0.1.0"
+version = "1.0.0"
 license = "MIT"
-description = ""
-authors = ["Gerard Otiniano <gerardotiniano@gmail.com>"]
+description = "Pysotope is an open-source package meant to processes raw data measured from the OSIBL GC-IRMS. Corrections are automatically calculated but the user must verify and confirm their application."
+authors = ["Dr. Gerard Otiniano <gerardotiniano@gmail.com>", "Dr. Elizabeth Thomas"]
 readme = "README.md"
 packages = [{include = "pysotope", from = "src"}]
 
