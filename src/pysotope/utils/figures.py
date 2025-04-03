@@ -76,10 +76,11 @@ def verify_lin_plot(lin, fig_path, dD_id, log_file_path,cutoff_line, isotope, re
     # print(xdata)
     best_model, popt, sse, pcov = fit_and_select_best(xdata, ydata)
     # Generate smooth x for plotting
+    print(popt)
     x_fit = np.linspace(xdata.min(), xdata.max(), 200)
-    if best_model == "exponential":
-        y_fit = exp_func(x_fit, *popt)
-        model_label = "Exponential Fit"
+    if best_model == "linear":
+        y_fit = linear_func(x_fit, *popt)
+        model_label = "Linear Fit"
     else:
         y_fit = log_func(x_fit, *popt)
         model_label = "Logarithmic Fit"

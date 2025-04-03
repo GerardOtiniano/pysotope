@@ -52,7 +52,7 @@ def process_linearity_correction(samp, drift, lin_std, user_choice, correction_l
             correction_log.loc["Linearity"] = chain_corr_val
     chain_corr_val = float(chain_corr_val)
     verify_lin_plot(norm, fig_path, dD_id,log_file_path, cutoff_line=chain_corr_val, isotope=isotope)
-    
+
     user_input = input("\nDoes this look correct? (Y/N)\n").lower()
     if pos_response(user_input):
         append_to_log(log_file_path, "Minimum peak area to derive linearity correction: "+str(chain_corr_val))
@@ -81,66 +81,80 @@ def process_linearity_correction(samp, drift, lin_std, user_choice, correction_l
         return drift, correction_log, lin_std, samp
 
     else:
-        time.sleep(0) 
+        time.sleep(0)
         clear_output(wait=True)
         print("\nInvalid response. Try again.\n")
 
 # def linearity_correction(drift, samp, lin_std, lin_norm, area_cutoff, dD_id, folder_path, fig_path, log_file_path, fig=False):
 #     area_cutoff = float(area_cutoff)
 #     corrected_drift = pd.DataFrame()  # Initialize an empty DataFrame to store corrected unknown
-
+#
 #     # Filter linearity standards and unknown based on area cutoff
 #     mask                   = lin_norm['area'] >= area_cutoff
 #     filtered_lin_norm      = lin_norm[mask] # normalized linearity standards
 #     filtered_lin_std       = lin_std[mask]  # original linearity standards
 #     filtered_drift         = drift[drift['area'] >= area_cutoff]
-
+#
 #     # Store and remove excluded unknown
 #     excluded_drift = drift[drift['area']<area_cutoff]
 #     excluded_lin_std = lin_std[lin_std['area']<area_cutoff]
 #     excluded_samp = samp[samp['area'] < area_cutoff]
-
+#
 #     # Store and remove excluded unknown
-#     y_shift = filtered_lin_norm[dD_id] + np.abs(filtered_lin_norm[dD_id].min())+1 # Shift isotope values so all values are positive for log-transform
-#     y_log = np.log(y_shift)
-#     m_d, b_d, r_squared, p_value, std_error, model = wls_regression(filtered_lin_norm['area'], y_log, log_file_path)
-#     # print("Debug linearity correction", m_d, b_d, r_squared, p_value, std_error)
-#     #  m_d, b_d, r_squared, p_value, std_error, model = wls_regression(filtered_lin_norm['area'], filtered_lin_norm[dD_id], log_file_path)
-    
-#     append_to_log(log_file_path, "Linearity correction equation: δD = (area)("+str(m_d)+"+"+str(b_d)+"\nr2 = "+str(r_squared)+"\np = "+str(p_value))
-#     new_time_rel = sm.add_constant(np.array(filtered_lin_norm['area']))
-#     results = model.predict(new_time_rel)
-#     prstd, pred_ci_lower, pred_ci_upper = wls_prediction_std(model)#, alpha=0.05)
-    
-#     lin_top_sort    = filtered_lin_norm.sort_values(by = 'area', ascending=False)
-#     lin_top_qt_area = int(len(lin_top_sort) * 0.2) # normalizing to the δD of the top 20% highest area linearity standards
-#     lin_top_qt_area = lin_top_sort.head(lin_top_qt_area); lin_reference = lin_top_qt_area[dD_id].mean()
-#     append_to_log(log_file_path, "Linearity correction is noramlized to the δD values from the top 20% area of linearity standards.")
-#     append_to_log(log_file_path, "Area = "+str(lin_top_qt_area['area'].min())+" to "+str(lin_top_qt_area['area'].max()))
-#     append_to_log(log_file_path, "δD = "+str(lin_top_qt_area[dD_id].min())+" to "+str(lin_top_qt_area[dD_id].max()))
-#     lin_cor    = results-lin_reference
-#     lin_cor    = lin_cor+lin_std[dD_id]
-#     filtered_lin_std['linearity_corrected_dD'] = lin_cor[~lin_cor.isna()]
-#     filtered_lin_std['linearity_error'] = prstd
-    
+#     xdata = filtered_lin_norm['area'].to_numpy()
+#     ydata = filtered_lin_norm[dD_id].to_numpy()
+#     best_model, popt, sse, pcov = fit_and_select_best(xdata, ydata)
+#     pred_error = prediction_std(best_model, xdata, popt, pcov)
+#     # Generate fitted predictions from the chosen model
+#     if best_model == "exponential":
+#         y_fit = exp_func(xdata, *popt)
+#     else:
+#         y_fit = log_func(xdata, *popt)
+#
+#     # Total Sum of Squares
+#     tss = np.sum((ydata - ydata.mean()) ** 2)
+#     if tss == 0:
+#         r_squared = 1.0  # Degenerate case if data is all the same
+#     else:
+#         r_squared = 1 - (sse / tss)
+#
+#     print(f"Chosen Model: {best_model}")
+#     print(f"Parameters: {popt}")
+#     print(f"SSE: {sse:.3f}, R²: {r_squared:.3f}")
+#
+#     lin_top_sort = filtered_lin_norm.sort_values(by='area', ascending=False)
+#     top_count = max(int(len(lin_top_sort) * 0.2), 1)  # ensure at least 1 point
+#     lin_top_qt_area = lin_top_sort.head(top_count)
+#     lin_reference = lin_top_qt_area[dD_id].mean()  # average δD of top 20%
+#
+#     # Combine new fit (y_fit) with the old reference approach
+#     lin_cor = y_fit - lin_reference + filtered_lin_norm[dD_id]
+#     filtered_lin_std['linearity_corrected_dD'] = lin_cor
+#     filtered_lin_std['linearity_error'] = pred_error  # or calculate a custom uncertainty
+#
 #     # Apply to drift
-#     drift_est = model.predict(sm.add_constant(np.array(filtered_drift.area)))
-#     prstd, pred_ci_lower, pred_ci_upper = wls_prediction_std(model, exog = sm.add_constant(np.array(filtered_drift.area)))#, alpha=0.05)
+#     if best_model == "exponential":
+#         drift_est = exp_func(np.array(filtered_drift.area), *popt)
+#     else:
+#         drift_est = log_func(np.array(filtered_drift.area), *popt)
+#     pred_error = prediction_std(best_model, np.array(filtered_drift.area), popt, pcov)
 #     drift_cor = drift_est-lin_reference
-#     drift_cor = drift_cor+filtered_drift[dD_id]
-#     filtered_drift['linearity_corrected_dD'] = drift_cor[~drift_cor.isna()]
-#     filtered_drift['linearity_error'] = prstd
-    
+#     filtered_drift['linearity_corrected_dD'] = drift_cor[~np.isnan(drift_cor)]#[~drift_cor.isna()]
+#     filtered_drift['linearity_error'] = pred_error
+#
 #     # Apply to samples
 #     filtered_samp = samp[samp['area'] >= area_cutoff]
-#     samp_const = sm.add_constant(np.array(filtered_samp.area))
-#     samp_est = model.predict(sm.add_constant(samp_const))
-#     prstd_s, pred_ci_lower, pred_ci_upper = wls_prediction_std(model, exog = samp_const)#, alpha=0.05)
-#     samp_cor = samp_est-lin_reference 
+#     if best_model == "exponential":
+#         samp_est = exp_func(np.array(filtered_samp.area), *popt)
+#     else:
+#         samp_est = log_func(np.array(filtered_samp.area), *popt)
+#     pred_error = prediction_std(best_model, np.array(filtered_samp.area), popt, pcov)
+#
+#     samp_cor = samp_est-lin_reference
 #     samp_cor = samp_cor+filtered_samp[dD_id]
 #     filtered_samp['linearity_corrected_dD'] = samp_cor[~samp_cor.isna()]
-#     filtered_samp['linearity_error'] = prstd_s
-
+#     filtered_samp['linearity_error'] = pred_error
+#
 #     return filtered_lin_std, filtered_drift, filtered_samp, excluded_drift, excluded_lin_std, excluded_samp
 
 def linearity_correction(drift, samp, lin_std, lin_norm, area_cutoff, dD_id, folder_path, fig_path, log_file_path, fig=False):
@@ -148,74 +162,72 @@ def linearity_correction(drift, samp, lin_std, lin_norm, area_cutoff, dD_id, fol
     corrected_drift = pd.DataFrame()  # Initialize an empty DataFrame to store corrected unknown
 
     # Filter linearity standards and unknown based on area cutoff
-    mask                   = lin_norm['area'] >= area_cutoff
-    filtered_lin_norm      = lin_norm[mask] # normalized linearity standards
-    filtered_lin_std       = lin_std[mask]  # original linearity standards
-    filtered_drift         = drift[drift['area'] >= area_cutoff]
+    mask              = lin_norm['area'] >= area_cutoff
+    filtered_lin_norm = lin_norm[mask].copy()  # copy to avoid SettingWithCopy warning
+    filtered_lin_std  = lin_std[mask].copy()
+    filtered_drift    = drift[drift['area'] >= area_cutoff].copy()
 
-    # Store and remove excluded unknown
-    excluded_drift = drift[drift['area']<area_cutoff]
-    excluded_lin_std = lin_std[lin_std['area']<area_cutoff]
-    excluded_samp = samp[samp['area'] < area_cutoff]
+    # Store excluded data
+    excluded_drift   = drift[drift['area'] < area_cutoff]
+    excluded_lin_std = lin_std[lin_std['area'] < area_cutoff]
+    excluded_samp    = samp[samp['area'] < area_cutoff]
 
-    # Store and remove excluded unknown
+    # ----------------- Fit Models and Select Best -----------------
     xdata = filtered_lin_norm['area'].to_numpy()
     ydata = filtered_lin_norm[dD_id].to_numpy()
     best_model, popt, sse, pcov = fit_and_select_best(xdata, ydata)
     pred_error = prediction_std(best_model, xdata, popt, pcov)
+    print(popt)
     # Generate fitted predictions from the chosen model
-    if best_model == "exponential":
-        y_fit = exp_func(xdata, *popt)
-    else:
+    if best_model == "linear":
+        y_fit = linear_func(xdata, *popt)
+    else:  # best_model == "log"
         y_fit = log_func(xdata, *popt)
-    
-    # Total Sum of Squares
+
+    # Total Sum of Squares and R²
     tss = np.sum((ydata - ydata.mean()) ** 2)
     if tss == 0:
-        r_squared = 1.0  # Degenerate case if data is all the same
+        r_squared = 1.0
     else:
         r_squared = 1 - (sse / tss)
-    
+
     print(f"Chosen Model: {best_model}")
     print(f"Parameters: {popt}")
     print(f"SSE: {sse:.3f}, R²: {r_squared:.3f}")
-    
+
+    # Determine reference value from the top 20% (by area) of the linearity standards
     lin_top_sort = filtered_lin_norm.sort_values(by='area', ascending=False)
-    top_count = max(int(len(lin_top_sort) * 0.2), 1)  # ensure at least 1 point
+    top_count = max(int(len(lin_top_sort) * 0.2), 1)
     lin_top_qt_area = lin_top_sort.head(top_count)
     lin_reference = lin_top_qt_area[dD_id].mean()  # average δD of top 20%
-    
-    # Combine your new fit (y_fit) with the old reference approach
-    # Example: shift your y_fit so it matches the top 20% average
+
+    # Combine new fit with the old reference approach for linearity standards
     lin_cor = y_fit - lin_reference + filtered_lin_norm[dD_id]
     filtered_lin_std['linearity_corrected_dD'] = lin_cor
     filtered_lin_std['linearity_error'] = pred_error  # or calculate a custom uncertainty
-    
-    # Apply to drift
-    if best_model == "exponential":
-        drift_est = exp_func(np.array(filtered_drift.area), *popt)
+
+    # Apply correction to drift
+    if best_model == "linear":
+        drift_est = linear_func(np.array(filtered_drift.area), *popt)
     else:
         drift_est = log_func(np.array(filtered_drift.area), *popt)
-    pred_error = pred_error = prediction_std(best_model, np.array(filtered_drift.area), popt, pcov)
-    drift_cor = drift_est-lin_reference
-    filtered_drift['linearity_corrected_dD'] = drift_cor[~np.isnan(drift_cor)]#[~drift_cor.isna()]
-    filtered_drift['linearity_error'] = pred_error
-    
-    # Apply to samples
-    filtered_samp = samp[samp['area'] >= area_cutoff]
-    if best_model == "exponential":
-        samp_est = exp_func(np.array(filtered_samp.area), *popt)
+    pred_error_drift = prediction_std(best_model, np.array(filtered_drift.area), popt, pcov)
+    drift_cor = drift_est - lin_reference
+    filtered_drift['linearity_corrected_dD'] = drift_cor[~np.isnan(drift_cor)]
+    filtered_drift['linearity_error'] = pred_error_drift
+
+    # Apply correction to samples
+    filtered_samp = samp[samp['area'] >= area_cutoff].copy()
+    if best_model == "linear":
+        samp_est = linear_func(np.array(filtered_samp.area), *popt)
     else:
         samp_est = log_func(np.array(filtered_samp.area), *popt)
-    pred_error = pred_error = prediction_std(best_model, np.array(filtered_samp.area), popt, pcov)    
-
-    samp_cor = samp_est-lin_reference 
-    samp_cor = samp_cor+filtered_samp[dD_id]
+    pred_error_samp = prediction_std(best_model, np.array(filtered_samp.area), popt, pcov)
+    samp_cor = samp_est - lin_reference + filtered_samp[dD_id]
     filtered_samp['linearity_corrected_dD'] = samp_cor[~samp_cor.isna()]
-    filtered_samp['linearity_error'] = pred_error
+    filtered_samp['linearity_error'] = pred_error_samp
 
     return filtered_lin_std, filtered_drift, filtered_samp, excluded_drift, excluded_lin_std, excluded_samp
-
 
 
 

@@ -1,4 +1,4 @@
-# pysotope (v.1.0.0).
+# pysotope (v.1.1.0).
 
 Pysotope is an open-source package meant to processes raw data measured from the OSIBL GC-IRMS. Corrections are automatically calculated but the user must verify and confirm their application.
 
@@ -14,7 +14,7 @@ Note: pysotope was tested using jupyter lab and jupyter notebook. Compatibility 
 
 ## Features
 
-- Uncertainty/error associted with each correction is automatically calculated and included in each data output. 
+- Uncertainty/error associted with each correction is automatically calculated and included in each data output.
 - Compatible with hydrogen and carbon isotope measurements
 - Modifiable standard isotopic values
 - Due to non-linear linearity expression, a exponential or logarithmic curve is automatically fit to the linearity standards.
@@ -39,6 +39,7 @@ pysotope.iso_process(pame=True, user_linearity_conditions = False, alt_stds = Tr
 ```
 
 ## Use
+
 - Run pysotope and provide the file path to the IRMS output data
 - Answer questions
 - Data output is split into mean of samples, individual samples, and standards in three .csv files
