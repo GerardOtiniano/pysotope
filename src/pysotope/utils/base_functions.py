@@ -1,3 +1,4 @@
+
 import pandas as pd
 from datetime import datetime, timedelta
 import time
@@ -6,6 +7,7 @@ import numpy as np
 from matplotlib.dates import date2num
 from .queries import *
 from .queries import query_file_location, query_stds
+import matplotlib.pyplot as plt
 
 def make_correction_df():
     correction_log_data = {
@@ -55,18 +57,22 @@ def create_log_file(folder_path):
         log_file.write(f"scipy version: {scipy.__version__}\n")
         log_file.write(f"statsmodels version: {statsmodels.__version__}\n")
         log_file.write(f"sklearn (scikit-learn) version: {sklearn.__version__}\n")
-        log_file.write(f"sklearn (scikit-learn) version: {sklearn.__version__}\n")
         log_file.write(f"IPython version: {IPython.__version__}\n\n\n")  
     return log_file_path
 
+# def append_to_log(log_file_path, log_message):
+#     """
+#     Add entry to log file.
+#     """
+#     with open(log_file_path, 'a') as log_file:
+#         current_datetime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+#         initial_message = f"\nLog file created at {current_datetime}\n"
+#         log_file.write("\n"+str(log_message))# + "; "+str(current_datetime)+"\n")
+        
 def append_to_log(log_file_path, log_message):
-    """
-    Add entry to log file.
-    """
+    # timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     with open(log_file_path, 'a') as log_file:
-        current_datetime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        initial_message = f"Log file created at {current_datetime}\n"
-        log_file.write(log_message)# + "; "+str(current_datetime)+"\n")
+        print(f" {log_message}", file=log_file)
         
 def chain_subsetrer(std_df, std_meta, std_type):
     chains = list(std_meta[std_meta['type']==std_type]['chain length']) 
@@ -115,7 +121,8 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     df['time_rel']=df['date-time']-df['date-time'].min()+1 # add 1 to avoid zero value for logarithmic regression correction
 
     # Check if PAME is in dataset
-    if df['chain'].str.contains("phthalic", case=False, na=False).any():
+    # if df['chain'].astype(str).str.contains("phthalic", case=False, na=False).any():
+    if df['chain'].astype(str).str.contains("phthalic", case=False, na=False).any():
         pame = True
         append_to_log(log_file_path, 'PAME detected in analysis')
         print("PAMEs detected.\nThe calculated methanol value from the PAMEs will be displayed to the user and stored in the log file.\n")
@@ -141,10 +148,10 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     unknown = unknown[~unknown['Identifier 1'].str.contains('H3+')]
     rt_dict = ask_user_for_rt(log_file_path)
     if rt_dict:
-        unknown   = process_dataframe(unknown, rt_dict, folder_path)
+        unknown   = process_dataframe(unknown, rt_dict, folder_path, log_file_path)
         unknown   = unknown[unknown.chain!="None"]
-        linearity_std   = process_dataframe(linearity_std, rt_dict, folder_path)
-        drift_std = process_dataframe(drift_std, rt_dict, folder_path)
+        linearity_std   = process_dataframe(linearity_std, rt_dict, folder_path, log_file_path)
+        drift_std = process_dataframe(drift_std, rt_dict, folder_path, log_file_path)
     else: unknown = unknown[unknown.chain.isin(['Phthalic acid','C16',"C18","C20","C22","C24","C24","C26","C28","C30","C32"])]
     for i in [unknown, drift_std, linearity_std]:
         i = i[~i.chain.isna()]
@@ -227,7 +234,7 @@ def process_dataframe(df, rt_dict, folder_path, log_file_path):
                     df.loc[(df['Time'] == time_val) & (df['Rt'] == correct_rt), 'chain'] = chain
                 elif len(closest_rows) > 1:
                     # Two closely matched peaks, prompt the user
-                    clear_output(wait=True)
+                    # clear_output(wait=True)
                     plt.figure()
                     sample_df = df[df['Time'] == time_val]
                     plt.scatter(sample_df['Rt'], sample_df['Area All'], label=sample_id, color='red', ec='k')

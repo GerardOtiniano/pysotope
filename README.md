@@ -1,4 +1,4 @@
-# pysotope (v.1.1.0).
+# pysotope (v.1.2.0).
 
 Pysotope is an open-source package meant to processes raw data measured from the OSIBL GC-IRMS. Corrections are automatically calculated but the user must verify and confirm their application.
 
@@ -6,8 +6,8 @@ Note: pysotope was tested using jupyter lab and jupyter notebook. Compatibility 
 
 ## Data Corrections
 
-- **Drift** (weighted means least squared)
-- **Linearity** (log or exponential fit)
+- **Drift** (weighted means least squares)
+- **Linearity** (log, exponential, or linear fit)
 - **Methanol** derivitization - user is asked for methanol values
 - **PAME** - calculates the isotopic composition of PAME, if run in the sequence (set argument pame=True)
 - **VSMOW** - calculated using C18, C20, and C28 standards, tested on C24 standard.
@@ -21,7 +21,7 @@ Note: pysotope was tested using jupyter lab and jupyter notebook. Compatibility 
 
 ## Installation
 
-```base
+```bash
 pip install pysotope
 ```
 
@@ -29,7 +29,7 @@ pip install pysotope
 
 - pame (default False) - if True, the package will automatically identify and correct PAME values in the sequence.
 - user_linearity_conditions (default False) - if True, during linearity correction, user will be asked for a cutoff value under which samples with peak areas lower than the cutoff will be excluded from the analysis.
-- alt_stds (default False) - if True, the user can modify the default standard value. These changes will be saved for the user, but will reset upon package update.
+- alt_stds (default False) - if True, the user can modify the default standard values. These changes will be saved for the user, but will reset upon package update.
 
 e.g.,
 

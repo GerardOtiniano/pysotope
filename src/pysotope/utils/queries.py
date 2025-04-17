@@ -11,19 +11,15 @@ def append_to_log(log_file_path, log_message):
         initial_message = f"Log file created at {current_datetime}\n"
         log_file.write(log_message + "; " + str(current_datetime) + "\n")
 
-
 def pos_response(response):
     return response.lower() in {"yes", "y", "true", "t", ""}
-
 
 def neg_response(response):
     return response.lower() in {"no", "n", "false", "f"}
 
-
 def query_project_name():
     project_name = input("\nProvide the project name.\n")
     return project_name 
-
 
 def query_file_location():
     while True:
@@ -58,7 +54,6 @@ def query_stds(alt_stds, isotope):
     standards_df = open_editor(alt_stds, isotope)
     return standards_df
 
-
 def lin_response(log_file_path):
     valid_responses = ["yes", "y", "true", "t", "no", "n", "false", "f"]
     while True:
@@ -69,24 +64,23 @@ def lin_response(log_file_path):
         else:
             print("\nInvalid response. Try again.\n")
 
-
 def q_methylation(unknown, stds, log_file_path):  # , user_choice, response):
     from .corrections.methanol import methyl_correction
     while True:
-        response = input("\nMethanol δD is -72.5 ± 3.1 ‰. Is this correct? (Y/N)\n").lower()
+        response = input("\nMethanol dD is -72.5 ± 3.1 ‰. Is this correct? (Y/N)\n").lower()
         if pos_response(response):
             meth_dD = -72.5
             meth_std = 3.1
             unknown = methyl_correction(unknown, stds)
             break
         elif neg_response(response):
-            meth_dD = input("\nMeasured δD value of the methanol used in FAME methylation?\n")
+            meth_dD = input("\nMeasured dD value of the methanol used in FAME methylation?\n")
             meth_std = input("\nUncertainty of the methanol δD value?\n")
             unknown, stds = methyl_correction(unknown, stds, mdD=meth_dD, mdD_err=meth_std)
             break
         else:
             print("\nInvalid response. Try again.\n")
-    append_to_log(log_file_path, f"Methanol δD: {meth_dD} ± {meth_std} ‰")
+    append_to_log(log_file_path, f"Methanol dD: {meth_dD} ± {meth_std} ‰")
     return unknown, stds
 
 def q_original_phthalic_value():

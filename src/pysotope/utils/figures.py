@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 from .regression import *
 from .curve_fitting import *
@@ -34,8 +35,8 @@ def std_plot(lin, drift, folder_path, fig_path, isotope, cutoff_line=None, regre
     ax[3].set_xlabel('Peak Area (mVs)')
     ax[0].set_title("Drift Standards")
     ax[1].set_title("Linearity Standards")
-    if isotope == "dD": label = "δD"
-    else: label = "δC"
+    if isotope == "dD": label = "dD"
+    else: label = "dC"
     fig.supylabel('Normalized '+str(label)+' (‰)')
 
     # Plot user-defined cutoff line
@@ -59,54 +60,52 @@ def verify_lin_plot(lin, fig_path, dD_id, log_file_path,cutoff_line, isotope, re
     below_cutoff = lin[lin["area"] < cutoff_line]
     plt.axvline(cutoff_line,color='red',linestyle="--")
     plt.scatter(below_cutoff["area"], below_cutoff[dD_id], alpha=0.4, ec='k', s=80, c='grey', label = "Below peak area threshold.")
-    if isotope == "dD": label = "δD"
-    else: label = "δC"
+    if isotope == "dD": label = "dD"
+    else: label = "dC"
     plt.ylabel("Normalized "+str(label)+" (‰)")
     plt.xlabel('Peak Area (mVs)')
-    
     temp = lin[lin.area > cutoff_line]   
-    # slope, intercept, r_squared, p_value, std_error, model = wls_regression(temp['area'], temp[dD_id],log_file_path)
-    # plt.plot([temp.area.min(), temp.area.max()], [temp.area.min() * slope + intercept,
-    #                                                        temp.area.max() * slope + intercept], c='k', linestyle='--')
-    ########################################################################################################################
     # Fit both exponential and log
     xdata = above_cutoff["area"]
     ydata = above_cutoff[dD_id]
-    # print(ydata_shift)
-    # print(xdata)
     best_model, popt, sse, pcov = fit_and_select_best(xdata, ydata)
     # Generate smooth x for plotting
-    print(popt)
     x_fit = np.linspace(xdata.min(), xdata.max(), 200)
     if best_model == "linear":
         y_fit = linear_func(x_fit, *popt)
         model_label = "Linear Fit"
+        parameter_text = f"y = {popt[0]}x + {popt[1]}"
+    elif best_model == "decay":
+        y_fit = exp_decay(x_fit, *popt)
+        model_label = "Exponential Decay"
+        parameter_text = f"y = {popt[0]} e^(-{popt[1]}x + {popt[2]})"
+    elif best_model == "growth": # "growth"
+        y_fit = exp_growth(x_fit, *popt)
+        model_label="Exponential Growth"
+        parameter_text = f"y = {popt[0]} (1-e^(-{popt[1]})x + {popt[2]})"
     else:
-        y_fit = log_func(x_fit, *popt)
-        model_label = "Logarithmic Fit"
+        print("Fatal error: no model converged")
+    tss = np.sum((ydata - ydata.mean()) ** 2)
+    if tss == 0:
+        r_squared = 1.0
+    else:
+        r_squared = 1 - (sse / tss)
+    
     # Plot the chosen best-fit curve
     plt.plot(x_fit, y_fit, 'k--', label=model_label)
-    ########################################################################################################################
-    
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), frameon=False, fancybox=False, shadow=True, ncol=2)
-
     plt.tight_layout()
     plt.savefig(os.path.join(fig_path, 'Linearity.png'), bbox_inches='tight')
     plt.show()
-    print("\nRegression statistics linearity standards:")
-    print(f"Best fit equation: {best_model}")
-    
-    # print("\nRegression statistics drift standards:")
-    # print(f"Linear equation: {label} = ({slope:.2f})(time) + {intercept:.2f}")
-    # print(f"Adjusted R²: {r_squared:.2f}")
-    # print(f"P-value: {p_value:.2f}")
-    # print(f"Standard Error: {std_error:.2f}")        
-      
+    print(f"Chosen Model: {model_label}")
+    print(f"Parameters: {parameter_text}")
+    print(f" R²: {r_squared:.3f} | SSE: {sse:.3f}")
+
 def total_dD_correction_plot(uncorrected_unknown, unknown , folder_path, fig_path, isotope):
     unique_chains = unknown['Chain Length'].unique()
     num_chains    = len(unique_chains)
-    if isotope == "dD": label = "δD"
-    else: label = "δC"
+    if isotope == "dD": label = "dD"
+    else: label = "dC"
     if num_chains>1:
         fig, axes     = plt.subplots(num_chains, 1, figsize=(5,3 * num_chains))  
         for i, chain in enumerate(unique_chains):
@@ -139,3 +138,27 @@ def total_dD_correction_plot(uncorrected_unknown, unknown , folder_path, fig_pat
     plt.subplots_adjust(hspace=1)
     plt.savefig(os.path.join(fig_path, 'isotope_corrections.png'), bbox_inches='tight')
     plt.close()
+    
+def drift_std_corr(norm, isotope, drift_std, t_mean, intercept, slope, fig_path):
+        fig, ax = plt.subplots(figsize=(6, 4))
+        for i, magic_markers in zip(norm.chain.unique(),['o','s']):
+            temp = norm[norm.chain==i]
+            ax.scatter(temp["time_rel"], temp[isotope], marker=magic_markers,
+                         c="k", ec='k', alpha=0.5, label=f"{i} Drift Raw")
+            ax.scatter(temp["time_rel"], temp['corrected_norm'], marker=magic_markers,
+                       c="red", ec='k', label= f"{i} Drift Corrected")
+        t_line = np.linspace(drift_std["time_rel"].min(), drift_std["time_rel"].max(), 50)
+        ax.plot(t_line, (slope * (t_line - t_mean) + intercept), "--k", lw=1, label="WLS fit")
+        ax.set_xlabel("Centered Time")
+        ax.set_ylabel(f"Centered {isotope} (‰)")
+        ax.legend()
+        fig.tight_layout()
+        plt.savefig(os.path.join(fig_path, 'Drift.png'), bbox_inches='tight')
+        plt.show()
+        
+        
+        
+        
+        
+        
+        

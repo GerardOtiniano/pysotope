@@ -29,29 +29,29 @@ def iso_process(pame=False, user_linearity_conditions = False, alt_stds = False)
     import scipy.stats as stats
 
     # Query isotope system
-    isotope = "dD" # isotope_type()
+    isotope = isotope_type()
     
     # Setup output folder
     folder_path, fig_path, results_path, loc, log_file_path = create_folder(isotope)
     
     # Set standards
     standards_df = query_stds(alt_stds, isotope)
+    append_to_log(log_file_path, standards_df)
     
     # Import data
     lin_std, drift_std, samples, correction_log, pame = import_data(loc, folder_path, log_file_path, isotope, standards_df)
     uncorrected_samples = samples.copy()
-
+    
     # Run standard plots for area
     std_plot(lin_std, drift_std, folder_path=folder_path, fig_path=fig_path,isotope=isotope, dD=isotope)
     
     # Drift Correction
     samples, lin_std, drift_std, dD_temp, correction_log = process_drift_correction(samples, lin_std, drift_std, correction_log, log_file_path=log_file_path, fig_path=fig_path,isotope=isotope)
     
-    # Show plots again
-    std_plot(lin_std, drift_std, folder_path=folder_path, fig_path=fig_path, dD=dD_temp,isotope=isotope)
+    # # Show plots again
+    # std_plot(lin_std, drift_std, folder_path=folder_path, fig_path=fig_path, dD=dD_temp,isotope=isotope)
 
     # Linearity (area) correction
-    lin_std = lin_std[lin_std.area>1]
     drift_std, correction_log, lin_std, samples = process_linearity_correction(samples, drift_std, lin_std, dD_temp, correction_log, folder_path, fig_path, isotope, user_linearity_conditions, log_file_path=log_file_path)
  
     # VSMOW correction
@@ -78,3 +78,9 @@ def iso_process(pame=False, user_linearity_conditions = False, alt_stds = False)
     
     # Final Data Correction and Plot
     output_results(raw_samples, samples, standards, pame_unknown, folder_path, fig_path, results_path, isotope, pame)
+    
+    
+    
+    
+    
+    

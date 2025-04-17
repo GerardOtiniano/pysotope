@@ -2,7 +2,7 @@ from .base_functions import append_to_log
 import statsmodels.api as sm
 import numpy as np
 
-def wls_regression(x, y, log_file_path): #should be wls_regression - changing it here so that wls can be used without renaming ever instance
+def wls_regression(x, y, log_file_path, weights=None): #should be wls_regression - changing it here so that wls can be used without renaming ever instance
     """
     Weighted Least Squares Regression Model Function. Weights are calcualted as the inverse of the amplitude. 
 
@@ -19,9 +19,10 @@ def wls_regression(x, y, log_file_path): #should be wls_regression - changing it
     - results: The results object from the regression model.
     """
     
-    append_to_log(log_file_path, "Applied weighted least squares regression function")
+    append_to_log(log_file_path, "- Applied weighted least squares regression function")
     x_with_const = sm.add_constant(x)
-    weights = 1 / (np.abs(x) + 1)  # Adding 1 to avoid division by zero, assuming x is your independent variable array
+    if weights is None:
+        weights = 1 / (np.abs(x) + 1)  # Adding 1 to avoid division by zero, assuming x is your independent variable array
     model = sm.WLS(y, x_with_const, weights=weights)
     results = model.fit()
     

@@ -39,10 +39,10 @@ class Editor:
         # Select the appropriate data dictionary based on isotope type
         if self.isotope == "dD":
             self.data_dict = vsmow_dD
-            isotope_header = "δD VSMOW"
+            isotope_header = "dD VSMOW"
         elif self.isotope == "dC":
             self.data_dict = vsmow_dC
-            isotope_header = "δ13C VSMOW"
+            isotope_header = "d13C VSMOW"
         else:
             print(f"Unsupported isotope type: {self.isotope}")
             self.root.destroy()
@@ -101,9 +101,9 @@ class Editor:
     
         # Determine the correct column name based on isotope type
         if self.isotope == "dD":
-            isotope_column = "δD"
+            isotope_column = "dD"
         elif self.isotope == "dC":
-            isotope_column = "δ13C"
+            isotope_column = "d13C"
         else:
             print("Error: ", f"Unsupported isotope type: {self.isotope}")
             return
@@ -148,7 +148,7 @@ def open_editor(alt_stds, isotope):
             data = {
                 "type": vsmow_dD["type"],
                 "chain length": vsmow_dD["id"],
-                "δD": vsmow_dD["isotope value"],
+                "dD": vsmow_dD["isotope value"],
                 "std": vsmow_dD["std"],
                 "n": vsmow_dD["n"],
                 "VSMOW accuracy check": [val.lower() == "true" for val in vsmow_dD["VSMOW accuracy check"]]
@@ -158,7 +158,7 @@ def open_editor(alt_stds, isotope):
             data = {
                 "type": vsmow_dC["type"],
                 "chain length": vsmow_dC["id"],
-                "δ13C": vsmow_dC["isotope value"],
+                "d13C": vsmow_dC["isotope value"],
                 "std": vsmow_dC["std"],
                 "n": vsmow_dC["n"],
                 "VSMOW accuracy check": [val.lower() == "true" for val in vsmow_dC["VSMOW accuracy check"]]
