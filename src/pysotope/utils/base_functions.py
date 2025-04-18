@@ -6,8 +6,10 @@ import os
 import numpy as np
 from matplotlib.dates import date2num
 from .queries import *
-from .queries import query_file_location, query_stds
+from .queries import query_file_location
 import matplotlib.pyplot as plt
+import pandas as pd
+from pathlib import Path
 
 def make_correction_df():
     correction_log_data = {
@@ -60,14 +62,6 @@ def create_log_file(folder_path):
         log_file.write(f"IPython version: {IPython.__version__}\n\n\n")  
     return log_file_path
 
-# def append_to_log(log_file_path, log_message):
-#     """
-#     Add entry to log file.
-#     """
-#     with open(log_file_path, 'a') as log_file:
-#         current_datetime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-#         initial_message = f"\nLog file created at {current_datetime}\n"
-#         log_file.write("\n"+str(log_message))# + "; "+str(current_datetime)+"\n")
         
 def append_to_log(log_file_path, log_message):
     # timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -93,7 +87,6 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     ~GAO~ 12/4/2023
     """
     # Create log file
-    
     df = pd.read_csv(data_location)
     new_name = [str(isotope),'area','chain']; x = 0; 
     if isotope == "dD": iso_rat = "d 2H/1H"
@@ -146,7 +139,7 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     mask    = (unknown['Identifier 1'].str.contains(drift_chain_lengths[0]) & unknown['Identifier 1'].str.contains(drift_chain_lengths[1]))
     unknown = unknown[~mask]
     unknown = unknown[~unknown['Identifier 1'].str.contains('H3+')]
-    rt_dict = ask_user_for_rt(log_file_path)
+    rt_dict = ask_user_for_rt(log_file_path, df, isotope)
     if rt_dict:
         unknown   = process_dataframe(unknown, rt_dict, folder_path, log_file_path)
         unknown   = unknown[unknown.chain!="None"]
@@ -164,8 +157,8 @@ def create_folder(isotope):
     directory = os.path.dirname(input_file)
     folder_path = os.path.join(directory, project_name)
     log_file_path = create_log_file(folder_path)
-    if isotope == "dD": iso_name = "δD"
-    else: iso_name = "δC"
+    if isotope == "dD": iso_name = "dD"
+    else: iso_name = "dC"
     append_to_log(log_file_path, "Isotope type: "+str(iso_name))
     os.makedirs(folder_path, exist_ok=True)
     
@@ -193,26 +186,6 @@ def closest_rt(df, time_val, target_rt, threshold=0.05):
     min_diff = differences.min()
     closest_rows = sample_df[differences <= min_diff * (1 + threshold)]
     return closest_rows
-
-def ask_user_for_rt(log_file_path):
-    chain_lengths = ['C16', 'C18', 'C20', 'C22', 'C24', 'C26', 'C28', 'C30', 'C32']
-    while True:
-        response = input("Do you want to detect components in this dataset by retention time? (Y/N):\n").strip().lower()
-        if pos_response(response):
-            append_to_log(log_file_path, "User opted to identify chains.")
-            rt_values = input("Enter retention times for " + ", ".join(chain_lengths) + " separated by commas (type 'none' for any you don't want to use):\n")
-            rt_values = rt_values.split(',')
-            if len(rt_values) == len(chain_lengths):
-                rt_dict = {chain: (None if rt.strip().lower() == 'none' else float(rt.strip())) for chain, rt in zip(chain_lengths, rt_values)}
-                return rt_dict
-            else:
-                print("Invalid input. Please provide the correct number of values.\n")
-        elif neg_response(response):
-            append_to_log(log_file_path, "User opted not to identify chains.")
-            print("Component detection not selected.\n")
-            return None
-        else:
-            print("Invalid response. Please answer 'yes' or 'no'.\n")
             
 def process_dataframe(df, rt_dict, folder_path, log_file_path):
     if rt_dict is None:
@@ -274,3 +247,17 @@ def process_dataframe(df, rt_dict, folder_path, log_file_path):
     export_df = df[df['chain'].isin(['C16', 'C18', 'C20', 'C22', 'C24', 'C26', 'C28', 'C30', 'C32'])]
     append_to_log(log_file_path, f"Chain lengths identified by user: {export_df.chain.unique()}")
     return export_df
+
+def load_standards(isotope: str="dD") -> pd.DataFrame:
+    HERE       = Path(__file__).resolve().parent
+    CSV_DIR    = HERE / "vsmow_standards"
+    CSV_DIR.mkdir(exist_ok=True, parents=True)
+    
+    path = CSV_DIR / f"vsmow_{isotope}.csv"
+    if not path.exists():
+        # first time: dump defaults and return them
+        return standard_editor(isotope)
+    df = pd.read_csv(path, dtype={"type":str, "chain length":str})
+    # coerce the boolean column
+    df["VSMOW accuracy check"] = df["VSMOW accuracy check"].astype(str).str.lower() == "true"
+    return df

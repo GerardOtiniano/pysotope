@@ -1,6 +1,6 @@
 import os
 import datetime 
-from .define_standards import open_editor 
+from .pick_chain_rt import *
 
 def append_to_log(log_file_path, log_message):
     """
@@ -50,9 +50,6 @@ def isotope_type():
         else:
             print("\nInvalid response\n")
 
-def query_stds(alt_stds, isotope):
-    standards_df = open_editor(alt_stds, isotope)
-    return standards_df
 
 def lin_response(log_file_path):
     valid_responses = ["yes", "y", "true", "t", "no", "n", "false", "f"]
@@ -76,7 +73,7 @@ def q_methylation(unknown, stds, log_file_path):  # , user_choice, response):
         elif neg_response(response):
             meth_dD = input("\nMeasured dD value of the methanol used in FAME methylation?\n")
             meth_std = input("\nUncertainty of the methanol δD value?\n")
-            unknown, stds = methyl_correction(unknown, stds, mdD=meth_dD, mdD_err=meth_std)
+            unknown = methyl_correction(unknown, stds, mdD=float(meth_dD), mdD_err=float(meth_std))
             break
         else:
             print("\nInvalid response. Try again.\n")
@@ -90,3 +87,24 @@ def q_original_phthalic_value():
 def q_output():
     o_fp = input("Provide a folder path for the output data:\n")
     return o_fp
+
+def ask_user_for_rt(log_file_path, df, isotope):
+    chain_lengths = ['C16', 'C18', 'C20', 'C22', 'C24', 'C26', 'C28', 'C30', 'C32']
+    while True:
+        response = input("Do you want to detect components in this dataset by retention time? (Y/N):\n").strip().lower()
+        if pos_response(response):
+            # picked = pick_chain_retention(isotope, df)
+            append_to_log(log_file_path, "User opted to identify chains.")
+            rt_values = input("Enter retention times for " + ", ".join(chain_lengths) + " separated by commas (type 'none' for any you don't want to use):\n")
+            rt_values = rt_values.split(',')
+            if len(rt_values) == len(chain_lengths):
+                rt_dict = {chain: (None if rt.strip().lower() == 'none' else float(rt.strip())) for chain, rt in zip(chain_lengths, rt_values)}
+                return rt_dict
+            else:
+                print("Invalid input. Please provide the correct number of values.\n")
+        elif neg_response(response):
+            append_to_log(log_file_path, "User opted not to identify chains.")
+            print("Component detection not selected.\n")
+            return None
+        else:
+            print("Invalid response. Please answer 'yes' or 'no'.\n")

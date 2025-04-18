@@ -17,10 +17,10 @@ def lin_response(log_file_path):
         else:
             print("\nInvalid response. Try again.\n")
 
-def process_linearity_correction(samp, drift, lin_std, user_choice, correction_log, folder_path, fig_path, isotope, user_linearity_conditions, log_file_path):
+def process_linearity_correction(cfg, samp, drift, lin_std, user_choice, correction_log, folder_path, fig_path, isotope, user_linearity_conditions, log_file_path):
     append_to_log(log_file_path, "Linearity correction")
     ex = pd.DataFrame()
-    dD_id = 'drift_corrected_dD' if correction_log.loc["Drift","samples"] == 1 else "dD"
+    dD_id = cfg.dD_col
     # Normalize data
     norm=pd.DataFrame()
     mean_isotope_dict={}
@@ -55,6 +55,7 @@ def process_linearity_correction(samp, drift, lin_std, user_choice, correction_l
 
     user_input = input("\nDoes this look correct? (Y/N)\n").lower()
     if pos_response(user_input):
+        cfg.linearity_applied = True 
         lin_std, drift, samp, excluded_drift, excluded_lin_std, excluded_samp  = linearity_correction(drift, samp, lin_std, norm, chain_corr_val, 
                                                                                                       dD_id, folder_path, fig_path, log_file_path=log_file_path)
         append_to_log(log_file_path, "- Minimum peak area to derive linearity correction: "+str(chain_corr_val))
@@ -157,8 +158,10 @@ def linearity_correction(drift, samp, lin_std, lin_norm, area_cutoff, dD_id, fol
     filtered_samp = samp[samp['area'] >= area_cutoff].copy()
     if best_model == "linear":
         samp_est = linear_func(np.array(filtered_samp.area), *popt)
-    else:
-        samp_est = log_func(np.array(filtered_samp.area), *popt)
+    elif best_model == "decay":
+        samp_est = exp_decay(np.array(filtered_samp.area), *popt)
+    elif best_model == "growth":
+        samp_est = exp_growth(np.array(filtered_samp.area), *popt)
         
     pred_error_samp = prediction_std(best_model, np.array(filtered_samp.area), popt, pcov, nsigma=2)
     samp_cor = samp_est - lin_reference + filtered_samp[dD_id]

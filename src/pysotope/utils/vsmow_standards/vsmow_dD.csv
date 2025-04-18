@@ -1,0 +1,5 @@
+type,chain length,isotope value,std,n,VSMOW accuracy check
+drift,C18,-206.2,1.7,5,False
+linearity,C20,-166.7,0.3,3,False
+linearity,C28,-89.28,1.0627,924,False
+drift,C24,-179.3,1.7,5,True

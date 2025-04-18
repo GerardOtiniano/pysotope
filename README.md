@@ -1,4 +1,4 @@
-# pysotope (v.1.2.0).
+# pysotope (v.1.3.0).
 
 Pysotope is an open-source package meant to processes raw data measured from the OSIBL GC-IRMS. Corrections are automatically calculated but the user must verify and confirm their application.
 
@@ -35,7 +35,12 @@ e.g.,
 
 ```bash
 import pysotope
-pysotope.iso_process(pame=True, user_linearity_conditions = False, alt_stds = True)
+
+# Edit standard data
+pysotope.standard_editor()
+
+# Process IRMS data
+pysotope.iso_process(pame=True, user_linearity_conditions = False)
 ```
 
 ## Use
