@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pysotope"
-version = "1.3.3"
+version = "1.3.4"
 license = "MIT"
 description = "Pysotope is an open-source package meant to processes raw data measured from the OSIBL GC-IRMS. Corrections are automatically calculated but the user must verify and confirm their application."
 authors = ["Dr. Gerard Otiniano <gerardotiniano@gmail.com>", "Dr. Elizabeth Thomas"]

@@ -59,26 +59,26 @@ def create_log_file(folder_path):
         log_file.write(f"scipy version: {scipy.__version__}\n")
         log_file.write(f"statsmodels version: {statsmodels.__version__}\n")
         log_file.write(f"sklearn (scikit-learn) version: {sklearn.__version__}\n")
-        log_file.write(f"IPython version: {IPython.__version__}\n\n\n")  
+        log_file.write(f"IPython version: {IPython.__version__}\n\n\n")
     return log_file_path
 
-        
+
 def append_to_log(log_file_path, log_message):
     # timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    with open(log_file_path, 'a') as log_file:
+    with open(log_file_path, 'a', encoding='utf-8', errors='replace') as log_file:
         print(f" {log_message}", file=log_file)
-        
+
 def chain_subsetrer(std_df, std_meta, std_type):
-    chains = list(std_meta[std_meta['type']==std_type]['chain length']) 
+    chains = list(std_meta[std_meta['type']==std_type]['chain length'])
     df = std_df[std_df['Identifier 1'].str.contains(chains[0]) & std_df['Identifier 1'].str.contains(chains[1])]
     df = df[df.chain.isin(chains)]
     return df, chains
-        
+
 def import_data(data_location, folder_path, log_file_path, isotope, standards_df):
     """
     Import .csv file from GCIRMs - default .csv file from GCIRMS creates issues with header. The function assigns new header names,
     creates a date-time format for linear regression, identifieds standards, and isolates standards and samples.
-    Outputs: 
+    Outputs:
         df             - original dataframe
         linearirty_std - dataframe with linearity standards
         drif_std       - dataframe with drift standards
@@ -88,11 +88,11 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     """
     # Create log file
     df = pd.read_csv(data_location)
-    new_name = [str(isotope),'area','chain']; x = 0; 
+    new_name = [str(isotope),'area','chain']; x = 0;
     if isotope == "dD": iso_rat = "d 2H/1H"
     elif isotope == "dC": iso_rat = "d 13C/12C"
     else: raise ValueError("Unsupported isotope system.")
-    
+
     column_found = False  # Flag to check if expected column is found and renamed
     for name in [str(iso_rat),'Area All','Component']:
         if name in df.columns:
@@ -105,7 +105,7 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
 
     if not column_found:
         raise ValueError("The expected header for the isotope system was not found in the csv file. Please verify the isotope system of interest.")
-    
+
     #df['date-time_true'] = pd.to_datetime(df['Date'] + ' ' + df['Time'], format='%m/%d/%y %H:%M:%S')
     df['date-time_true'] = df.apply(lambda row: try_parse_date(row['Date'] + ' ' + row['Time']), axis=1)
     df['date-time'] = date2num(df['date-time_true'])
@@ -120,7 +120,7 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
         append_to_log(log_file_path, 'PAME detected in analysis')
         print("PAMEs detected.\nThe calculated methanol value from the PAMEs will be displayed to the user and stored in the log file.\n")
     else: pame = False
-    
+
     # Seperate samples, H3+, drift, and linearity standards
     linearity_std, linearity_chain_lengths = chain_subsetrer(df, standards_df, "linearity")
     append_to_log(log_file_path, f"Number of linearity standards analyzed: {len(linearity_std[linearity_std.chain == linearity_chain_lengths[1]])}")
@@ -133,7 +133,7 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     time_signatures_to_remove = unique_time_signatures[:2] # Modified Jan 7, 2024 - line above is original method, but didnt work?
     drift_std = drift_std[~drift_std["date-time"].isin(time_signatures_to_remove)] # Remove first two runs - OSIBL ignores for variance
     append_to_log(log_file_path, "First two drift standards ignored.")
-    
+
     mask    = (df['Identifier 1'].str.contains(linearity_chain_lengths[0]) & df['Identifier 1'].str.contains(linearity_chain_lengths[1]))
     unknown = df[~mask]
     mask    = (unknown['Identifier 1'].str.contains(drift_chain_lengths[0]) & unknown['Identifier 1'].str.contains(drift_chain_lengths[1]))
@@ -161,11 +161,11 @@ def create_folder(isotope):
     else: iso_name = "dC"
     append_to_log(log_file_path, "Isotope type: "+str(iso_name))
     os.makedirs(folder_path, exist_ok=True)
-    
+
     # Make output folders
     fig_path = os.path.join(folder_path, 'Figures')
     os.makedirs(fig_path, exist_ok=True)
-    
+
     results_path = os.path.join(folder_path, 'Results')
     os.makedirs(results_path, exist_ok=True)
     return folder_path, fig_path, results_path, input_file, log_file_path
@@ -186,7 +186,7 @@ def closest_rt(df, time_val, target_rt, threshold=0.05):
     min_diff = differences.min()
     closest_rows = sample_df[differences <= min_diff * (1 + threshold)]
     return closest_rows
-            
+
 def process_dataframe(df, rt_dict, folder_path, log_file_path):
     if rt_dict is None:
         return df
@@ -252,7 +252,7 @@ def load_standards(isotope: str="dD") -> pd.DataFrame:
     HERE       = Path(__file__).resolve().parent
     CSV_DIR    = HERE / "vsmow_standards"
     CSV_DIR.mkdir(exist_ok=True, parents=True)
-    
+
     path = CSV_DIR / f"vsmow_{isotope}.csv"
     if not path.exists():
         # first time: dump defaults and return them

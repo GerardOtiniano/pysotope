@@ -140,7 +140,7 @@ def linearity_correction(drift, samp, lin_std, lin_norm, area_cutoff, dD_id, fol
 
     # Correct linearity standard
     offset = y_fit - lin_reference # (predicted lin_std dD from peak area) - (dD of top 20% peak areas); difference between predicted and 'true values', giving offset
-    filtered_lin_std['linearity_corrected_dD']   = filtered_lin_std[dD_id] + offset  # Add offset to dD values from previous step
+    filtered_lin_std['linearity_corrected_dD'] = filtered_lin_std[dD_id] + offset  # Add offset to dD values from previous step
     filtered_lin_std['linearity_error'] = pred_error
 
     if best_model == "linear":
