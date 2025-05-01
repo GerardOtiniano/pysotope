@@ -2,3 +2,4 @@
 .DS_Store
 .dist
 .src/scrap.py
+.src/pysotope/pysotope_with_3D_plot.py
