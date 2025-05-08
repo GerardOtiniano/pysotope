@@ -52,7 +52,7 @@ def process_linearity_correction(cfg, samp, drift, lin_std, user_choice, correct
             chain_corr_val = 0
             correction_log.loc["Linearity"] = chain_corr_val
     chain_corr_val = float(chain_corr_val)
-    verify_lin_plot(norm, fig_path, dD_id,log_file_path, cutoff_line=chain_corr_val, isotope=isotope)
+    verify_lin_plot(norm, samp, fig_path, dD_id,log_file_path, cutoff_line=chain_corr_val, isotope=isotope)
 
     user_input = input("\nDoes this look correct? (Y/N)\n").lower()
     if pos_response(user_input):
@@ -139,7 +139,7 @@ def linearity_correction(drift, samp, lin_std, lin_norm, area_cutoff, dD_id, fol
     lin_reference = lin_top_qt_area[dD_id].mean()  # average δD of top 20%
 
     # Correct linearity standard
-    offset = y_fit - lin_reference # (predicted lin_std dD from peak area) - (dD of top 20% peak areas); difference between predicted and 'true values', giving offset
+    offset = -y_fit + lin_reference # (predicted lin_std dD from peak area) - (dD of top 20% peak areas); difference between predicted and 'true values', giving offset
     filtered_lin_std['linearity_corrected_dD'] = filtered_lin_std[dD_id] + offset  # Add offset to dD values from previous step
     filtered_lin_std['linearity_error'] = pred_error
 
@@ -151,7 +151,7 @@ def linearity_correction(drift, samp, lin_std, lin_norm, area_cutoff, dD_id, fol
         drift_est = exp_growth(np.array(filtered_drift.area), *popt)
 
     pred_error_drift = prediction_std(best_model, np.array(filtered_drift.area), popt, pcov, nsigma=2)
-    drift_cor = drift_est - lin_reference + filtered_drift[dD_id] # (Predicted drift) -(reference value = offset. Then (offset) + (drift value) = corrected _drift
+    drift_cor = -drift_est + lin_reference + filtered_drift[dD_id] # (Predicted drift) -(reference value = offset. Then (offset) + (drift value) = corrected _drift
     filtered_drift['linearity_corrected_dD'] = drift_cor[~np.isnan(drift_cor)]
     filtered_drift['linearity_error'] = pred_error_drift
 
@@ -165,7 +165,7 @@ def linearity_correction(drift, samp, lin_std, lin_norm, area_cutoff, dD_id, fol
         samp_est = exp_growth(np.array(filtered_samp.area), *popt)
 
     pred_error_samp = prediction_std(best_model, np.array(filtered_samp.area), popt, pcov, nsigma=2)
-    samp_cor = samp_est - lin_reference + filtered_samp[dD_id]
+    samp_cor = -samp_est + lin_reference + filtered_samp[dD_id]
     filtered_samp['linearity_corrected_dD'] = samp_cor[~samp_cor.isna()]
     filtered_samp['linearity_error'] = pred_error_samp
 

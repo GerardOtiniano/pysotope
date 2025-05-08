@@ -48,7 +48,7 @@ def std_plot(lin, drift, folder_path, fig_path, isotope, cutoff_line=None, regre
     plt.savefig(os.path.join(fig_path, 'Standards Raw.png'), dpi=300, bbox_inches='tight')
     plt.show()
     
-def verify_lin_plot(lin, fig_path, dD_id, log_file_path,cutoff_line, isotope, regress=False):
+def verify_lin_plot(lin, samples, fig_path, dD_id, log_file_path,cutoff_line, isotope, regress=False):
     """
     Function to plot linearity and drift standards with color differentiation based on cutoff.
     ~GAO~12/4/2023
@@ -60,6 +60,14 @@ def verify_lin_plot(lin, fig_path, dD_id, log_file_path,cutoff_line, isotope, re
     below_cutoff = lin[lin["area"] < cutoff_line]
     plt.axvline(cutoff_line,color='red',linestyle="--")
     plt.scatter(below_cutoff["area"], below_cutoff[dD_id], alpha=0.4, ec='k', s=80, c='grey', label = "Below peak area threshold.")
+    
+    x = 0
+    for index, row in samples.iterrows():
+        if x == 0:
+            plt.axvline(row['area'], c= 'k', alpha = 0.3, zorder=0, label='Samples')
+            x=x+1
+        else:
+            plt.axvline(row['area'], c= 'k', alpha = 0.3, zorder=0)
     if isotope == "dD": label = "dD"
     else: label = "dC"
     plt.ylabel("Normalized "+str(label)+" (‰)")
@@ -156,7 +164,46 @@ def drift_std_corr(norm, isotope, drift_std, t_mean, intercept, slope, fig_path)
         plt.savefig(os.path.join(fig_path, 'Drift.png'), bbox_inches='tight')
         plt.show()
         
-        
+
+def standard_check_figures(cfg, stds, fig_path, label, vsmow):
+    cl = vsmow[vsmow['VSMOW accuracy check']==True]['chain length'].values[0]
+    cl_val = vsmow[vsmow['VSMOW accuracy check']==True]['isotope value'].values[0]
+    fig = plt.figure()
+    plt.title(f"Raw {label}")
+    for j in vsmow['chain length'].unique():
+        temp = stds[stds.chain==j]
+        plt.scatter(temp['VSMOW_dD_actual'], temp[label], label = j)
+    plt.ylabel(f"Measured {label}")
+    plt.xlabel(f"VSMOW {label}")
+    plt.scatter([cl_val]*len(stds[stds.chain==f"{cl}"]), stds[stds.chain==f"{cl}"]['dD'], label = cl)
+    plt.legend()
+    plt.savefig(f"{fig_path}/Standards_RawVsVSMOW.png", dpi=300)
+    plt.close()
+    
+    if cfg.drift_applied:
+        fig = plt.figure()
+        plt.title("Drift Corrected")
+        for j in vsmow['chain length'].unique():
+            temp = stds[stds.chain==j]
+            plt.scatter(temp[f'VSMOW_{label}_actual'], temp[f'drift_corrected_{label}'], label =j)
+        plt.scatter([cl_val]*len(stds[stds.chain==f"{cl}"]), stds[stds.chain==f"{cl}"][f'drift_corrected_{label}'], label= cl)
+        plt.legend()
+        plt.ylabel(f"Measured {label}")
+        plt.xlabel(f"VSMOW {label}")
+        plt.savefig(f"{fig_path}/Standards_DriftCorrVsVSMOW.png", dpi=300)
+        plt.close()
+    if cfg.linearity_applied:
+        fig = plt.figure()
+        plt.title("Linearity Corrected")
+        for j in vsmow['chain length'].unique():
+            temp = stds[stds.chain==j]
+            plt.scatter(temp[f'VSMOW_{label}_actual'], temp[f'linearity_corrected_{label}'], label =j)
+        plt.scatter([cl_val]*len(stds[stds.chain==f"{cl}"]), stds[stds.chain==f"{cl}"][f'linearity_corrected_{label}'], label = cl)
+        plt.legend()
+        plt.ylabel(f"Measured {label}")
+        plt.xlabel(f"VSMOW {label}")
+        plt.savefig(f"{fig_path}/Standards_LinearityCorrVsVSMOW.png", dpi=300)
+        plt.close()
         
         
         
