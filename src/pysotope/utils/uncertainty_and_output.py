@@ -3,8 +3,9 @@ import os
 import pandas as pd
 from .figures import total_dD_correction_plot
 from .config import CorrectionConfig
+from .base_functions import append_to_log
 
-def output_results(raw_unknown, unknown, sd, unknown_pame, folder_path, fig_path, res_path, isotope, pame):
+def output_results(raw_unknown, unknown, sd, unknown_pame, folder_path, fig_path, res_path, isotope, pame, log_file_path, cfg):
     # Define column name mappings for output CSV files
     column_name_mapping = {
         'Identifier 1': 'Sample Name',
@@ -51,9 +52,8 @@ def output_results(raw_unknown, unknown, sd, unknown_pame, folder_path, fig_path
     columns_to_select = [
         "Date", "Time", "Identifier 1", "chain", "Rt", "area", "Area 2", "Area 3",
         "Ampl  2", "Ampl  3", "BGD 2", 'BGD 3', "time_rel", "dD", "drift_corrected_dD",
-        "drift_error", "linearity_corrected_dD", "linearity_error", "VSMOW_dD", "vsmow_error",
-        "total_uncertainty"
-    ]
+        "drift_error", "linearity_corrected_dD", "linearity_error", "VSMOW_dD", "VSMOW_error",
+        "total_uncertainty"]
 
     # Select only existing columns from sd dataframe
     existing_columns = [col for col in columns_to_select if col in sd.columns]
@@ -78,8 +78,7 @@ def output_results(raw_unknown, unknown, sd, unknown_pame, folder_path, fig_path
         "linearity_corrected_dD": f"Linearity {isotope}", "linearity_error": f"Linearity {isotope} error",
         "VSMOW_dD": f"VSMOW corrected {isotope}", "vsmow_error": "VSMOW error",
         "methanol_dD": f"Methanol corrected {isotope}", "methanol_error": f"Methanol error {isotope}",
-        "total_uncertainty": "Total uncertainty"
-    }
+        "total_uncertainty": "Total uncertainty"}
     standards_categorized = standards_categorized.rename(columns=column_rename_map)
     standards_categorized.insert(len(standards_categorized.columns) - 1, 'Corrected '+str(isotope), standards_categorized[f"VSMOW corrected {isotope}"])
     # Save standards dataframe to CSV
@@ -95,7 +94,40 @@ def output_results(raw_unknown, unknown, sd, unknown_pame, folder_path, fig_path
     # Save raw_unknown dataframe to CSV
     raw_unknown_renamed.to_csv(os.path.join(res_path, 'Results - sample replicates.csv'), index=False)
     total_dD_correction_plot(raw_unknown_renamed, unknown_renamed, folder_path, fig_path, isotope)
+    combine_errors(standards_categorized, cfg, log_file_path, isotope)
     print("\nCorrections complete :)")
+    
+    
+    
+    
+
+def combine_errors(df, config, log_file_path, isotope):
+    """
+    Combine error terms using sum of squares based on the applied corrections,
+    always including VSMOW_error.
+
+    Parameters:
+        df (pd.DataFrame): The input DataFrame containing error columns.
+        config (CorrectionConfig): Configuration object specifying which corrections were applied.
+
+    Returns:
+        pd.Series: A Series with the combined error for each row.
+    """
+    error_terms = [df['VSMOW_error']]  # Always include VSMOW_error
+    if config.linearity_applied:
+        error_terms.append(df[f'Linearity {isotope} error'])
+
+    if config.drift_applied:
+        error_terms.append(df[f'Drift {isotope} error'])
+    # Combine using root sum of squares
+    squared = [err**2 for err in error_terms]
+    df['Total Error'] = np.sqrt(sum(squared))
+    summary = df.groupby('Component').agg(
+        mean_corrected_dD=(f'Corrected {isotope}', 'mean'),
+        sum_squared_error=('Total Error', lambda x: np.mean(x))).reset_index()
+    append_to_log(log_file_path, "Summary of standards")
+    append_to_log(log_file_path, summary)
+    
 
 def mean_values_with_uncertainty(data, cfg, iso, sample_name_header="Identifier 1", chain_header="chain"):
     """

@@ -79,10 +79,9 @@ def iso_process(pame=False, user_linearity_conditions = False):
         pame_unknown = mean_values_with_uncertainty(pame_unknown, sample_name_header="Identifier 1", chain_header="chain", iso=isotope)
     else:
         pame_unknown = None
-
     # Final Data Correction and Plot
-    output_results(raw_samples, samples, standards, pame_unknown, folder_path, fig_path, results_path, isotope, pame)
-
+    output_results(raw_samples, samples, standards, pame_unknown, folder_path, fig_path, results_path, isotope, pame, log_file_path, cfg)
+    
 
 
 
