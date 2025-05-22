@@ -1,5 +1,5 @@
 [![Pysotope Logo](misc/logo.png)](https://github.com/GerardOtiniano/pysotope/blob/main/misc/logo.png)
-# pysotope (v.1.4.0).
+# pysotope (v.1.5.0).
 
 Pysotope is an open-source package meant to processes raw data measured from the OSIBL GC-IRMS. Corrections are automatically calculated but the user must verify and confirm their application.
 
@@ -19,6 +19,7 @@ Note: pysotope was tested using jupyter lab and jupyter notebook. Compatibility 
 - Compatible with hydrogen and carbon isotope measurements
 - Modifiable standard isotopic values
 - Due to non-linear linearity expression, a exponential or logarithmic curve is automatically fit to the linearity standards.
+- Assign chain lengths using interactive plot (requires Jupyter Lab or Jupyter Notebook)
 
 ## Installation
 
@@ -42,6 +43,10 @@ pysotope.standard_editor()
 
 # Process IRMS data
 pysotope.iso_process(pame=True, user_linearity_conditions = False)
+
+# Assign chain lengths
+%matplotlib widget
+pysotope.assign_chain_lengths()
 ```
 
 ## Use
