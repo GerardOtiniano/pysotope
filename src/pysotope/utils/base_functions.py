@@ -70,9 +70,10 @@ def append_to_log(log_file_path, log_message):
 
 def chain_subsetrer(std_df, std_meta, std_type):
     chains = list(std_meta[std_meta['type']==std_type]['chain length'])
-    df = std_df[std_df['Identifier 1'].str.contains(chains[0]) & std_df['Identifier 1'].str.contains(chains[1])]
+    IDs = list(std_meta[std_meta['type']==std_type]['ID'])
+    df = std_df[std_df['Identifier 1'].str.contains(IDs[0]) & std_df['Identifier 1'].str.contains(IDs[1])]
     df = df[df.chain.isin(chains)]
-    return df, chains
+    return df, chains, IDs
 
 def import_data(data_location, folder_path, log_file_path, isotope, standards_df):
     """
@@ -122,9 +123,9 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     else: pame = False
 
     # Seperate samples, H3+, drift, and linearity standards
-    linearity_std, linearity_chain_lengths = chain_subsetrer(df, standards_df, "linearity")
+    linearity_std, linearity_chain_lengths, linearity_ids = chain_subsetrer(df, standards_df, "linearity")
     append_to_log(log_file_path, f"Number of linearity standards analyzed: {len(linearity_std[linearity_std.chain == linearity_chain_lengths[1]])}")
-    drift_std, drift_chain_lengths = chain_subsetrer(df, standards_df, "drift")
+    drift_std, drift_chain_lengths, drift_ids = chain_subsetrer(df, standards_df, "drift")
     append_to_log(log_file_path, f"Number of Drift standards analyzed: {len(drift_std[drift_std.chain == drift_chain_lengths[1]])}")
 
     # Remove first two drift runs
@@ -134,9 +135,9 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     drift_std = drift_std[~drift_std["date-time"].isin(time_signatures_to_remove)] # Remove first two runs - OSIBL ignores for variance
     append_to_log(log_file_path, "First two drift standards ignored.")
 
-    mask    = (df['Identifier 1'].str.contains(linearity_chain_lengths[0]) & df['Identifier 1'].str.contains(linearity_chain_lengths[1]))
+    mask    = (df['Identifier 1'].str.contains(linearity_ids[0]) & df['Identifier 1'].str.contains(linearity_ids[1]))
     unknown = df[~mask]
-    mask    = (unknown['Identifier 1'].str.contains(drift_chain_lengths[0]) & unknown['Identifier 1'].str.contains(drift_chain_lengths[1]))
+    mask    = (unknown['Identifier 1'].str.contains(drift_ids[0]) & unknown['Identifier 1'].str.contains(drift_ids[1]))
     unknown = unknown[~mask]
     unknown = unknown[~unknown['Identifier 1'].str.contains('H3+')]
     rt_dict = ask_user_for_rt(log_file_path, df, isotope)
@@ -258,6 +259,8 @@ def load_standards(isotope: str="dD") -> pd.DataFrame:
         # first time: dump defaults and return them
         return standard_editor(isotope)
     df = pd.read_csv(path, dtype={"type":str, "chain length":str})
+    df = df[df["Use as Standard"]==True]
     # coerce the boolean column
     df["VSMOW accuracy check"] = df["VSMOW accuracy check"].astype(str).str.lower() == "true"
+    df["Use as Standard"] = df["Use as Standard"].astype(str).str.lower() == "true"
     return df

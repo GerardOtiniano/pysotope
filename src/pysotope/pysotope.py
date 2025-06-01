@@ -45,7 +45,7 @@ def iso_process(pame=False, user_linearity_conditions = False):
     # Import data
     lin_std, drift_std, samples, correction_log, pame = import_data(loc, folder_path, log_file_path, isotope, standards_df)
     uncorrected_samples = samples.copy()
-
+    
     # Run standard plots for area
     std_plot(lin_std, drift_std, folder_path=folder_path, fig_path=fig_path,isotope=isotope, dD=isotope)
 

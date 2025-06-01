@@ -18,23 +18,7 @@ def assign_chain_length(output_location=None, rt_min=0, rt_max=2500):
         return
     
     df = pd.read_csv(csv_path)
-    df = df.loc[(df['Rt'] > 0) & (df['Rt'] < 2500)].copy()
-
-    # chain_pattern = re.compile(r'([CN])(\d{1,2})')
-    
-    # def extract_chains(identifier):
-    #     # Find all matches like C18, N18, C20 etc.
-    #     matches = chain_pattern.findall(str(identifier))
-    #     # matches is list of tuples: [('C','18'), ('N','18'), ('C','20')]
-        
-    #     # Extract only the digits as ints
-    #     chains = [int(num) for _, num in matches]
-        
-    #     if len(chains) >= 2:
-    #         return tuple(sorted(chains[:2]))
-    #     else:
-    #         return None
-    
+    df = df.loc[(df['Rt'] > rt_min) & (df['Rt'] < rt_max)].copy()
     chain_pattern = re.compile(r'[CN]\d+[A-Za-z0-9]*')
 
     def extract_chains(identifier):
@@ -78,23 +62,11 @@ def assign_chain_length(output_location=None, rt_min=0, rt_max=2500):
     
     fig, ax = plt.subplots(figsize=(10, 6))
     
-    # for label, color in legend_labels.items():
-    #     if label == 'Unknowns':
-    #         subset = df[df['Color'] == color]
-    #         zoro=0
-    #     else:
-    #         parts = label.split()
-    #         chain_nums = (int(parts[1][1:]), int(parts[3][1:]))
-    #         subset = df[df['Chains'] == chain_nums]
-    #         zoro=1
-    
-    #     if not subset.empty:
-    #         ax.scatter(subset['Rt'], subset['Area All'], color=color, label=label,
-    #                    alpha=0.75, edgecolor='k', s=50, zorder=zoro)
     for label, color in legend_labels.items():
         if label == 'Unknowns':
             subset = df[df['Color'] == color]
             zoro = 0
+            alphy = 0.4
         else:
             parts = label.split()
             # parts example: ['Standard', 'C20N2', '&', 'C28']
@@ -102,10 +74,11 @@ def assign_chain_length(output_location=None, rt_min=0, rt_max=2500):
             chain_2 = parts[3]
             subset = df[df['Chains'].apply(lambda x: x == (chain_1, chain_2))]
             zoro = 1
+            alphy = 0.65
     
         if not subset.empty:
             ax.scatter(subset['Rt'], subset['Area All'], color=color, label=label,
-                       alpha=0.75, edgecolor='k', s=50, zorder=zoro)
+                       alpha=alphy, edgecolor='k', s=50, zorder=zoro)
     ax.set_xlabel('Retention Time (Rt)')
     ax.set_ylabel('Area All')
     ax.legend(loc='upper right')

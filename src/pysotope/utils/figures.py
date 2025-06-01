@@ -10,39 +10,37 @@ def std_plot(lin, drift, folder_path, fig_path, isotope, cutoff_line=None, regre
     Function to plot linearity and drift standards.
     ~GAO~12/1/2023
     """
-    fig, axes = plt.subplots(2, 2, figsize=[6, 4], sharex=False)
-    chain_length = ["C18", "C20", "C24", "C28", "C30"]
-    ax = axes.flatten()
-
-    for i in [0, 2]:
-        temp = drift[drift.chain == chain_length[i]]
-        ax[i].scatter(temp["date-time_true"], temp[dD], alpha=0.4, ec='k', s=80, c='blue')
-        ax[i].text(0.9, 0.9, chain_length[i],
+    fig, ax = plt.subplots(2, 2, figsize=[6, 4], sharex=False)
+    for i in [0, 1]:
+        drift.chain.unique()
+        temp = drift[drift.chain == drift.chain.unique()[i]]
+        ax[i,0].scatter(temp["date-time_true"], temp[dD], alpha=0.4, ec='k', s=80, c='blue')
+        ax[i,0].text(0.9, 0.9, drift.chain.unique()[i],
                    horizontalalignment='center', verticalalignment='center',
-                   transform=ax[i].transAxes)
+                   transform=ax[i,0].transAxes)
 
-        temp = lin[lin.chain == chain_length[i + 1]]
-        ax[i + 1].scatter(temp["area"], temp[dD], alpha=0.2, ec='k', s=80, c='orange')
-        ax[i + 1].text(0.9, 0.9, chain_length[i + 1],
+        temp = lin[lin.chain == lin.chain.unique()[i]]
+        ax[i,1].scatter(temp["area"], temp[dD], alpha=0.2, ec='k', s=80, c='orange')
+        ax[i,1].text(0.9, 0.9, lin.chain.unique()[i],
                       horizontalalignment='center', verticalalignment='center',
-                      transform=ax[i + 1].transAxes)
+                      transform=ax[i,1].transAxes)
     # Set x-axis labels for the third subplot (ax2)
-    ax[2].set_xlabel('Date (mm-dd-yyyy)')
-    ax[2].set_xticks(ax[2].get_xticks())
-    ax[2].set_xticklabels(labels=ax[2].get_xticklabels(), rotation=45)
-    ax[0].set_xticks([]);#ax[1].set_xticks([])
+    ax[1,0].set_xlabel('Date (mm-dd-yyyy)')
+    ax[1,0].set_xticks(ax[1,0].get_xticks())
+    ax[1,0].set_xticklabels(labels=ax[1,0].get_xticklabels(), rotation=45)
+    ax[0,0].set_xticks([]);#ax[1].set_xticks([])
 
-    ax[3].set_xlabel('Peak Area (mVs)')
-    ax[0].set_title("Drift Standards")
-    ax[1].set_title("Linearity Standards")
+    ax[1,1].set_xlabel('Peak Area (mVs)')
+    ax[0,0].set_title("Drift Standards")
+    ax[0,1].set_title("Linearity Standards")
     if isotope == "dD": label = "dD"
     else: label = "dC"
     fig.supylabel('Normalized '+str(label)+' (‰)')
 
     # Plot user-defined cutoff line
     if cutoff_line is not None:
-        ax[1].axvline(cutoff_line[0], c='red', linestyle='--')
-        ax[3].axvline(cutoff_line[1], c='red', linestyle='--')
+        ax[0,1].axvline(cutoff_line[0], c='red', linestyle='--')
+        ax[1,1].axvline(cutoff_line[1], c='red', linestyle='--')
     # plt.show(block=True)
     plt.tight_layout()
     plt.savefig(os.path.join(fig_path, 'Standards Raw.png'), dpi=300, bbox_inches='tight')
@@ -50,64 +48,167 @@ def std_plot(lin, drift, folder_path, fig_path, isotope, cutoff_line=None, regre
     
 def verify_lin_plot(lin, samples, fig_path, dD_id, log_file_path,cutoff_line, isotope, regress=False):
     """
-    Function to plot linearity and drift standards with color differentiation based on cutoff.
-    ~GAO~12/4/2023
+    Function to plot linearity standards with color differentiation based on cutoff,
+    but split into one subplot per unique 'chain' in the `samples` DataFrame.
+    ~GAO~12/4/2023 (modified)
     """
-    cutoff_line=float(cutoff_line)
-    fig = plt.figure(figsize=[5, 3])
-    above_cutoff = lin[lin["area"] >= cutoff_line]
-    plt.scatter(above_cutoff["area"], above_cutoff[dD_id], alpha=0.4, ec='k', s=80, c='orange', label = "Above peak area threshold.")
-    below_cutoff = lin[lin["area"] < cutoff_line]
-    plt.axvline(cutoff_line,color='red',linestyle="--")
-    plt.scatter(below_cutoff["area"], below_cutoff[dD_id], alpha=0.4, ec='k', s=80, c='grey', label = "Below peak area threshold.")
+    # Ensure cutoff_line is a float
+    cutoff_line = float(cutoff_line)
     
-    x = 0
-    for index, row in samples.iterrows():
-        if x == 0:
-            plt.axvline(row['area'], c= 'k', alpha = 0.3, zorder=0, label='Samples')
-            x=x+1
-        else:
-            plt.axvline(row['area'], c= 'k', alpha = 0.3, zorder=0)
-    if isotope == "dD": label = "dD"
-    else: label = "dC"
-    plt.ylabel("Normalized "+str(label)+" (‰)")
-    plt.xlabel('Peak Area (mVs)')
-    temp = lin[lin.area > cutoff_line]   
-    # Fit both exponential and log
-    xdata = above_cutoff["area"]
-    ydata = above_cutoff[dD_id]
+    # Find all unique chains in samples
+    chains = samples["chain"].unique()
+    n_chains = len(chains)
+    if n_chains == 0:
+        raise ValueError("`samples.chain.unique()` returned no chains. Nothing to plot.")
+    
+    # Create a figure with n_chains subplots, in a single column
+    fig, axes = plt.subplots(n_chains, 1, figsize=(5, 3 * n_chains), sharex=False)
+    # If there's only one chain, axes won't be an array; force it into an array
+    if n_chains == 1:
+        axes = np.array([axes])
+    
+    # Precompute all points above/below cutoff (these are the same for every chain)
+    above_cutoff = lin[lin["area"] >= cutoff_line]
+    below_cutoff = lin[lin["area"] <  cutoff_line]
+    
+    # Fit model once (on the "above_cutoff" points); we'll re‐plot the same best‐fit curve in each subplot
+    xdata = above_cutoff["area"].values
+    ydata = above_cutoff[dD_id].values
     best_model, popt, sse, pcov = fit_and_select_best(xdata, ydata)
-    # Generate smooth x for plotting
     x_fit = np.linspace(xdata.min(), xdata.max(), 200)
+    
     if best_model == "linear":
         y_fit = linear_func(x_fit, *popt)
         model_label = "Linear Fit"
-        parameter_text = f"y = {popt[0]}x + {popt[1]}"
+        parameter_text = f"y = {popt[0]:.3g} x + {popt[1]:.3g}"
     elif best_model == "decay":
         y_fit = exp_decay(x_fit, *popt)
         model_label = "Exponential Decay"
-        parameter_text = f"y = {popt[0]} e^(-{popt[1]}x + {popt[2]})"
-    elif best_model == "growth": # "growth"
+        parameter_text = f"y = {popt[0]:.3g} e^(−{popt[1]:.3g} x + {popt[2]:.3g})"
+    elif best_model == "growth":
         y_fit = exp_growth(x_fit, *popt)
-        model_label="Exponential Growth"
-        parameter_text = f"y = {popt[0]} (1-e^(-{popt[1]})x + {popt[2]})"
+        model_label = "Exponential Growth"
+        parameter_text = f"y = {popt[0]:.3g} (1 − e^(−{popt[1]:.3g} x) + {popt[2]:.3g})"
     else:
-        print("Fatal error: no model converged")
-    tss = np.sum((ydata - ydata.mean()) ** 2)
-    if tss == 0:
-        r_squared = 1.0
-    else:
-        r_squared = 1 - (sse / tss)
+        raise RuntimeError("No model converged in fit_and_select_best().")
     
-    # Plot the chosen best-fit curve
-    plt.plot(x_fit, y_fit, 'k--', label=model_label)
-    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), frameon=False, fancybox=False, shadow=True, ncol=2)
+    # Compute R²
+    tss = np.sum((ydata - ydata.mean()) ** 2)
+    r_squared = 1.0 if tss == 0 else 1.0 - (sse / tss)
+    
+    # Now loop over each chain, make a subplot
+    for idx, chain in enumerate(chains):
+        ax = axes[idx]
+        
+        # 1) Scatter points: above cutoff (orange) and below cutoff (grey)
+        ax.scatter(above_cutoff["area"], above_cutoff[dD_id],  alpha=0.4,  ec="k", s=80, c="orange", label="Above peak area threshold")
+        ax.scatter(below_cutoff["area"], below_cutoff[dD_id], alpha=0.4, ec="k", s=80, c="grey",label="Below peak area threshold")
+        # Vertical cutoff line
+        ax.axvline(cutoff_line, color="red", linestyle="--")
+        
+        # 2) Vertical lines for this specific chain
+        subset = samples[samples["chain"] == chain]
+        for i, row in subset.iterrows():
+            ax.axvline(row["area"], color="k", alpha=0.3, zorder=0,label="Samples" if i == subset.index[0] else None)
+        
+        # 3) Plot the best-fit curve (same for all subplots)
+        ax.plot(x_fit, y_fit, "red", label=model_label)
+        ax.text(0.01,1.1, str(chain), transform=ax.transAxes, ha='left', va='top', fontsize=10)
+        
+        # 5) Axis labels (only bottom‐most subplot gets the X label; all get a Y label)
+        if isotope == "dD":
+            y_label = "Normalized dD (‰)"
+        else:
+            y_label = "Normalized dC (‰)"
+        ax.set_ylabel(y_label)
+        
+        if idx == n_chains - 1:
+            ax.set_xlabel("Peak Area (mVs)")
+        
+        # 6) Minor formatting
+        ax.legend(
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.2),
+            frameon=False,
+            fancybox=False,
+            shadow=False,
+            ncol=2
+        )
+        ax.grid(alpha=0)
+    
+    # Adjust layout and save
     plt.tight_layout()
-    plt.savefig(os.path.join(fig_path, 'Linearity.png'), bbox_inches='tight')
+    out_fname = os.path.join(fig_path, "Linearity_by_chain.png")
+    plt.savefig(out_fname, bbox_inches="tight", dpi=300)
     plt.show()
+    
+    # Finally, print fit diagnostics once
     print(f"Chosen Model: {model_label}")
     print(f"Parameters: {parameter_text}")
-    print(f" R²: {r_squared:.3f} | SSE: {sse:.3f}")
+    print(f"R² = {r_squared:.3f} | SSE = {sse:.3f}")
+    
+# def verify_lin_plot(lin, samples, fig_path, dD_id, log_file_path,cutoff_line, isotope, regress=False):
+#     """
+#     Function to plot linearity and drift standards with color differentiation based on cutoff.
+#     ~GAO~12/4/2023
+#     """
+#     cutoff_line=float(cutoff_line)
+#     fig = plt.figure(figsize=[5, 3])
+#     above_cutoff = lin[lin["area"] >= cutoff_line]
+#     plt.scatter(above_cutoff["area"], above_cutoff[dD_id], alpha=0.4, ec='k', s=80, c='orange', label = "Above peak area threshold.")
+#     below_cutoff = lin[lin["area"] < cutoff_line]
+#     plt.axvline(cutoff_line,color='red',linestyle="--")
+#     plt.scatter(below_cutoff["area"], below_cutoff[dD_id], alpha=0.4, ec='k', s=80, c='grey', label = "Below peak area threshold.")
+    
+#     x = 0
+#     for index, row in samples.iterrows():
+#         if x == 0:
+#             plt.axvline(row['area'], c= 'k', alpha = 0.3, zorder=0, label='Samples')
+#             x=x+1
+#         else:
+#             plt.axvline(row['area'], c= 'k', alpha = 0.3, zorder=0)
+#     if isotope == "dD": label = "dD"
+#     else: label = "dC"
+#     plt.ylabel("Normalized "+str(label)+" (‰)")
+#     plt.xlabel('Peak Area (mVs)')
+#     temp = lin[lin.area > cutoff_line]   
+#     # Fit both exponential and log
+#     xdata = above_cutoff["area"]
+#     ydata = above_cutoff[dD_id]
+#     best_model, popt, sse, pcov = fit_and_select_best(xdata, ydata)
+#     # Generate smooth x for plotting
+#     x_fit = np.linspace(xdata.min(), xdata.max(), 200)
+#     if best_model == "linear":
+#         y_fit = linear_func(x_fit, *popt)
+#         model_label = "Linear Fit"
+#         parameter_text = f"y = {popt[0]}x + {popt[1]}"
+#     elif best_model == "decay":
+#         y_fit = exp_decay(x_fit, *popt)
+#         model_label = "Exponential Decay"
+#         parameter_text = f"y = {popt[0]} e^(-{popt[1]}x + {popt[2]})"
+#     elif best_model == "growth": # "growth"
+#         y_fit = exp_growth(x_fit, *popt)
+#         model_label="Exponential Growth"
+#         parameter_text = f"y = {popt[0]} (1-e^(-{popt[1]})x + {popt[2]})"
+#     else:
+#         print("Fatal error: no model converged")
+#     tss = np.sum((ydata - ydata.mean()) ** 2)
+#     if tss == 0:
+#         r_squared = 1.0
+#     else:
+#         r_squared = 1 - (sse / tss)
+    
+#     # Plot the chosen best-fit curve
+#     plt.plot(x_fit, y_fit, 'k--', label=model_label)
+#     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), frameon=False, fancybox=False, shadow=True, ncol=2)
+#     plt.tight_layout()
+#     plt.savefig(os.path.join(fig_path, 'Linearity.png'), bbox_inches='tight')
+#     plt.show()
+#     print(f"Chosen Model: {model_label}")
+#     print(f"Parameters: {parameter_text}")
+#     print(f" R²: {r_squared:.3f} | SSE: {sse:.3f}")
+
+
 
 def total_dD_correction_plot(uncorrected_unknown, unknown , folder_path, fig_path, isotope):
     unique_chains = unknown['Chain Length'].unique()
