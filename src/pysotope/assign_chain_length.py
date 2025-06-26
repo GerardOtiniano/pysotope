@@ -57,7 +57,7 @@ def assign_chain_length(output_location=None, rt_min=0, rt_max=2500, chain_lengt
     if 'Component' not in df.columns:
         df['Component'] = ''
 
-    chain_lengths = ['C16', 'C18', 'C20', 'C22', 'C24', 'C26', 'C28', 'C30', 'C32']
+    # chain_lengths = ['C16', 'C18', 'C20', 'C22', 'C24', 'C26', 'C28', 'C30', 'C32']
     chain_index = 0
 
     fig, ax = plt.subplots(figsize=(10, 6))
