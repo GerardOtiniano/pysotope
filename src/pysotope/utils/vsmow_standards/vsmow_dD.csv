@@ -1,8 +1,8 @@
 ID,type,chain length,isotope value,std,n,VSMOW accuracy check,Use as Standard
-N18M,drift,C18,-206.2,1.7,5,False,True
-C20N2,linearity,C20,-166.7,0.3,3,False,True
-C28,linearity,C28,-89.28,1.0627,924,True,True
-C20Z2,drift,C20,-4.9,1.0,1,False,True
-C18,drift,C18,-206.2,1.7,5,False,False
-C24,drift,C24,-179.3,1.7,5,False,False
-C20,linearity,C20,-166.7,0.3,3,False,False
+N18M,drift,C18,-206.2,1.7,5,False,False
+C20N2,linearity,C20,-166.7,0.3,3,False,False
+C28,linearity,C28,-89.28,1.0627,924,False,True
+C20Z2,drift,C20,-4.9,1.0,1,False,False
+C18,drift,C18,-206.2,1.7,5,False,True
+C24,drift,C24,-179.3,1.7,5,True,True
+C20,linearity,C20,-166.7,0.3,3,False,True
