@@ -2,7 +2,7 @@
 import os
 from base_functions import create_folder, append_to_log
 from utils.import_data import load_ea_standards, import_EA_data
-from utils.drift_correction import apply_drift_correction_plot
+from utils.ea_drift_correction import drift_correction
 from utils.VPD_correction import plot_measured_vs_actual
 
 def ea_process():
@@ -26,12 +26,12 @@ def ea_process():
 
     # Import data
     df = import_EA_data(loc)
-    df = df[df['Component']=='N2']
     
     # Drift correction
-    apply_drift_correction_plot(df)
+    df = drift_correction(df) # Need to apply correction to Carbon
+    df.to_csv("test.csv")
     
     # VPD correction
     # plot_measured_vs_actual(df, standards, 'Nitrogen')
 
-# /Users/gerard/Documents/GitHub/pysotope/src/pysotope/EA/example_raw.csv
+# /Users/gerard/Documents/GitHub/pysotope/src/pysotope/EA/example_raw.csv 

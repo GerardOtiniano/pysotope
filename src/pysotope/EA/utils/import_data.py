@@ -65,4 +65,5 @@ def import_EA_data(file_path):
     df = pd.read_csv(file_path, encoding='unicode escape')
     df = label_element_type(df)
     df = add_seconds_since_start(df)
+    df = df[df['Component'].isin(['N2', 'CO2'])] # Only consider valid peaks
     return df
