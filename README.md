@@ -1,3 +1,4 @@
+[![DOI](https://zenodo.org/badge/867841029.svg)](https://doi.org/10.5281/zenodo.16749399)
 [![Pysotope Logo](misc/logo.png)](https://github.com/GerardOtiniano/pysotope/blob/main/misc/logo.png)
 # pysotope (v.1.6.0).
 
