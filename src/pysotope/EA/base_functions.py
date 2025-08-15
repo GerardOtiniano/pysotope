@@ -1,13 +1,8 @@
-
-import pandas as pd
-from datetime import datetime, timedelta
-import time
 import os
-import numpy as np
-from matplotlib.dates import date2num
-import matplotlib.pyplot as plt
 import pandas as pd
-from pathlib import Path
+
+from datetime import datetime
+from tabulate import tabulate
 
 def make_correction_df():
     correction_log_data = {
@@ -30,9 +25,6 @@ def try_parse_date(date_str):
     return None  # Return None if all formats fail
 
 def create_log_file(folder_path):
-    """
-    Create log file.
-    """
     import platform
     import pandas as pd
     import matplotlib
@@ -44,7 +36,7 @@ def create_log_file(folder_path):
     # Ensure the folder exists
     os.makedirs(folder_path, exist_ok=True)
     # Create the full path for the log file
-    log_file_path = os.path.join(folder_path, 'Log file.txt')
+    log_file_path = os.path.join(folder_path, 'pysotope_EA_log.txt')
     # Create the log file and write the initial message
     with open(log_file_path, 'w') as log_file:
         # current_datetime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -61,16 +53,21 @@ def create_log_file(folder_path):
         log_file.write(f"IPython version: {IPython.__version__}\n\n\n")
     return log_file_path
 
-
-def append_to_log(log_file_path, log_message):
+def append_to_log(log_file_loc, log_message, standards = False):
     # timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    with open(log_file_path, 'a', encoding='utf-8', errors='replace') as log_file:
-        print(f" {log_message}", file=log_file)
-
+    with open(log_file_loc, 'a', encoding='utf-8', errors='replace') as log_file:
+        if standards:
+            with pd.option_context(
+                    "display.max_columns", None,  # Shows all columns
+            ):
+                with open(log_file_loc, 'a', encoding='utf-8', errors='replace') as log_file:
+                    log_file.write(tabulate(log_message, headers="keys", tablefmt="simple"))
+        else:
+            print(f" {log_message}", file=log_file)
 
 def query_file_location():
     while True:
-        loc = input("\nProvide the full path of the raw EA-IRMS datafile (as .csv).\n")
+        loc = input("Provide the full path of the raw EA-IRMS datafile (as .csv).\n")
         
         # Remove single quotes if present at both the start and end of the input
         if loc.startswith("'") and loc.endswith("'"):
