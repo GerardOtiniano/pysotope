@@ -1,0 +1,87 @@
+Log file created at 2025-08-15 11:19:38
+Python version: 3.12.11
+pandas version: 2.3.1
+matplotlib version: 3.10.5
+numpy version: 2.3.2
+scipy version: 1.16.1
+statsmodels version: 0.14.5
+sklearn (scikit-learn) version: 1.7.1
+IPython version: 9.4.0
+
+
+ Compound type: Nitrogen and Carbon
+    EA-IRMS Standards             %N    %N 1_  %N n        %C    %C 1_  %C n      C/N    d15N(AIR) value    d15N sigma    d15N n    d13C(VPDB) value    d13C sigma    d13C n
+--  ------------------------  ------  -------  ------  ------  -------  ------  -----  -----------------  ------------  --------  ------------------  ------------  --------
+ 0  Low Organic Content Soil   0.133    0.012  5        1.61     0.045  15       12.1              7.3           0.065        15             -26.66          0.12         15
+ 1  Sorghum                    1.47     0.125  5       41.26     0.1    15       28.1              1.58          0.075        15             -13.78          0.085        15
+ 2  Urea                      46.667  nan      nan     20      nan      nan       0.4             -0.56          0.07         15             -43.26          0.02         15
+ 3  Acetanilide               10.32     0.095  20-28   71.06     0.145  20-28     6.9             -1.282         0.064        10             -28.842         0.015        10
+ 4  Wheat Flour_NML            1.89     0.04   10      36.605    1.719  12       19.4              4.631         0.102        10             -26.871         0.05         10
+ 5  BL Sediment                0.696    0.027  10       7.059    0.356  4        10.1              3.035         0.07         10             -28.012         0.084        10
+ 6  L-alanine C3H7NO2         15.73   nan      nan     40.449  nan      nan       2.6             43.25          0.07          4             -17.93          0.02          5 
+
+
+Drift Correction:
+ 
+'SORGHUM' standards found in the data.
+ Nitrogen values at 42,70 have been removed.
+ 
+Drift Correction Model for Nitrogen: 
+ Equation of fitted line: y = -0.00·x + 1.43
+ R-squared: 0.500
+ Root Mean Squared Error (RMSE): 0.363
+ 
+Drift Correction Model for Carbon: 
+ Equation of fitted line: y = -0.00·x + -14.45
+ R-squared: 0.238
+ Root Mean Squared Error (RMSE): 0.170
+ 
+User choice: 4) Apply correction for both Nitrogen and Carbon.
+ 
+Drift correction applied to Nitrogen:
+  N rows corrected: 73
+ 
+Drift correction applied to Carbon:
+  C rows corrected: 74
+ 
+
+VPDB Calibration:
+
+ 'SORGHUM','ACETANILIDE','WHEAT FLOUR' standards found for Nitrogen in the data.
+ 'SORGHUM','ACETANILIDE','WHEAT FLOUR' standards found for Carbon in the data.
+ 'BL SEDIMENT' samples found for Nitrogen in the data.
+ 'BL SEDIMENT' samples found for Carbon in the data.
+ 
+VPDB Calibration Model for Nitrogen: 
+ Equation of fitted line: y = 0.53·x + 0.59
+ R-squared: 0.650
+ Root Mean Squared Error (RMSE): 1.469
+
+ Testing VPDB Calibration on 'BL SEDIMENT' samples:
+ Mean Prediction: 3.784
+ Bias: 0.749
+ Root Mean Squared Error (RMSE): 1.816
+ 
+VPDB Calibration Model for Carbon: 
+ Equation of fitted line: y = 1.02·x + 1.05
+ R-squared: 1.000
+ Root Mean Squared Error (RMSE): 0.129
+
+ Testing VPDB Calibration on 'BL SEDIMENT' samples:
+ Mean Prediction: -28.137
+ Bias: -0.125
+ Root Mean Squared Error (RMSE): 0.139
+ 
+ VPDB calibration applied to Nitrogen:
+  N rows calibrated: 73
+ 
+ VPDB calibration applied to Carbon:
+  C rows calibrated: 74
+ 
+Summary of Nitrogen samples
+    mean_VPDB_d15N/14N  mean_d 15N/14N_corr  total_error
+0            4.286443             7.046142     0.712276
+ 
+Summary of Carbon samples
+    mean_VPDB_d13C/12C  mean_d 13C/12C_corr  total_error
+0          -27.212254           -27.759162     0.094809

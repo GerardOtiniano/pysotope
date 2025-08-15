@@ -1,11 +1,11 @@
 # src/pyosotope/EA
 import os
 
-from base_functions import create_folder, append_to_log
-from src.pysotope.EA.utils.VPDB_correction import VPDB_correction
-from src.pysotope.EA.utils.uncertainty_calculation import uncertainty_calculation
-from utils.import_data import load_ea_standards, import_EA_data
-from utils.ea_drift_correction import drift_correction
+from .base_functions import create_folder, append_to_log
+from .utils.VPDB_correction import VPDB_correction
+from .utils.uncertainty_calculation import uncertainty_calculation
+from .utils.import_data import load_ea_standards, import_EA_data
+from .utils.ea_drift_correction import drift_correction
 
 def ea_process():
     # Setup Output Folder

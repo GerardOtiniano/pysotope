@@ -4,7 +4,7 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from src.pysotope.EA.base_functions import append_to_log
+from . .base_functions import append_to_log
 
 EA_stds = ["Sorghum", "Acetanilide", "Wheat Flour_NML", "BL Sediment"]
 identifiers = ['sorghum', 'acetanilide', 'wheat flour', "bl sediment", "sample"]

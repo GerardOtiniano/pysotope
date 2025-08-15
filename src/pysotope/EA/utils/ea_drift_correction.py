@@ -4,8 +4,8 @@ import numpy as np
 import statsmodels.api as sm
 import os
 
-from src.pysotope.EA.base_functions import append_to_log
-from src.pysotope.EA.utils.config import CorrectionConfig
+from . .base_functions import append_to_log
+from .config import CorrectionConfig
 
 log_file_path = fig = None
 

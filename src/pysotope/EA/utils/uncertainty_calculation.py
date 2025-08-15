@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 
-from src.pysotope.EA.base_functions import append_to_log
-from src.pysotope.EA.utils.VPDB_correction import get_isotope as VPDB_get_isotope
-from src.pysotope.EA.utils.ea_drift_correction import get_isotope as drift_get_isotope
+from . .base_functions import append_to_log
+from .VPDB_correction import get_isotope as VPDB_get_isotope
+from .ea_drift_correction import get_isotope as drift_get_isotope
 
 def uncertainty_calculation(df, cfg, log_file):
     """
