@@ -66,14 +66,14 @@ def VPDB_correction(df, standards, cfg, log_file, fig_dir):
     N_bl_df = standardize(N_df, standards, 'N', 'BL') #Testing sample DataFrame for Nitrogen
     C_bl_df = standardize(C_df, standards, 'C', 'BL') #Testing sample DataFrame for Carbon
 
-    N_model, N_rel = VPDB_model(N_std_df, cfg, 'N', N_bl_df)
-    C_model, C_rel = VPDB_model(C_std_df, cfg, 'C', C_bl_df)
+    N_model, N_rel, N_slope, N_int = VPDB_model(N_std_df, cfg, 'N', N_bl_df)
+    C_model, C_rel, C_slope, C_int = VPDB_model(C_std_df, cfg, 'C', C_bl_df)
 
     # Calibrated EA-IRMS DataFrame for Nitrogen
-    cal_N_df = apply_vpdb_calibration(N_df, N_model, N_rel, cfg, 'N')
+    cal_N_df = apply_vpdb_calibration(N_df, N_model, N_rel, cfg, 'N', N_slope, N_int)
 
     # Calibrated EA-IRMS DataFrame for Carbon
-    cal_C_df = apply_vpdb_calibration(C_df, C_model, C_rel, cfg, 'C')
+    cal_C_df = apply_vpdb_calibration(C_df, C_model, C_rel, cfg, 'C', C_slope, C_int)
 
     # Calibrated EA-IRMS DataFrame (Nitrogen and Carbon combined)
     final_df = pd.concat([cal_N_df, cal_C_df], ignore_index=False)
@@ -301,11 +301,12 @@ def VPDB_model(df, cfg, tag, bl_df):
     mean = (y.sum() + y_bl_actual.sum()) / (y.size + y_bl_actual.size)
 
     combined_df = pd.concat([df, bl_df], ignore_index=False)
-    plot_VPDB_calibration(combined_df, identifiers[0:4], el, actual_col, output_col, iso_label)
 
-    return model, mean
+    plot_VPDB_calibration(combined_df, identifiers[0:4], el, actual_col, output_col, iso_label, slope, intercept)
 
-def plot_VPDB_calibration(df, identifiers, el, actual_col, output_col, iso_label, input_col = None):
+    return model, mean, slope, intercept
+
+def plot_VPDB_calibration(df, identifiers, el, actual_col, output_col, iso_label, slope = None, intercept = None, input_col = None):
     """
     Plot predicted versus measured/actual isotope ratio values to visualize VPDB calibration.
 
@@ -351,7 +352,11 @@ def plot_VPDB_calibration(df, identifiers, el, actual_col, output_col, iso_label
     # y_line = model.predict(X_line)
     # plt.plot(x_line, y_line, linestyle='--', color='k')
 
-    plt.plot([x.min()-1, x.max()+1], [x.min()-1, x.max()+1], linestyle='--', color='k')
+    # plt.plot([x.min()-1, x.max()+1], [x.min()-1, x.max()+1], linestyle='--', color='k')
+    if slope:
+        y1 = x.min()*slope + intercept
+        y2 = x.max()*slope + intercept
+        plt.plot([x.min(),x.max()], [y1,y2], linestyle='--', color='k')
 
     colors = ["orange", "blue", "green", "red", "k"]
     for i, identifier in enumerate(identifiers):
@@ -390,7 +395,7 @@ def plot_VPDB_calibration(df, identifiers, el, actual_col, output_col, iso_label
 
     plt.show()
 
-def apply_vpdb_calibration(df, model, rel, cfg, tag):
+def apply_vpdb_calibration(df, model, rel, cfg, tag, slope, intercept):
     """
     Apply VPDB calibration to the EA-IRMS DataFrame using a fitted linear regression model.
 
@@ -440,7 +445,7 @@ def apply_vpdb_calibration(df, model, rel, cfg, tag):
     df[f"{output_col}_diff"] = cal_diff
     df[f"{output_col}_se"] = se
 
-    plot_VPDB_calibration(df, identifiers, el, actual_col, output_col, iso_label, input_col)
+    plot_VPDB_calibration(df, identifiers, el, actual_col, output_col, iso_label, slope, intercept, input_col)
 
     rows = df[output_col].notna().sum()
     msg = f"VPDB calibration applied to {el}:\n  {tag} rows calibrated: {rows}"
