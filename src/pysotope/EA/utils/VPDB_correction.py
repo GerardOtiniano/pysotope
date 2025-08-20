@@ -249,15 +249,48 @@ def VPDB_model(df, cfg, tag, bl_df):
     input_col, output_col, actual_col, iso_label, el = get_isotope(tag, cfg)
     append_to_log(log_file_path, f"\nVPDB Calibration Model for {el}: ")
 
-    #Model derivation
-    vals = df[input_col].to_numpy()
-    X = sm.add_constant(vals.reshape(-1, 1))
-    y = df[actual_col].to_numpy()
+    # #Model derivation
+    # vals = df[input_col].to_numpy()
+    # X = sm.add_constant(vals.reshape(-1, 1))
+    # y = df[actual_col].to_numpy()
 
-    model = sm.OLS(y, X).fit()
+    # model = sm.OLS(y, X).fit()
 
-    y_pred = model.predict(X)
+    # y_pred = model.predict(X)
 
+    # df[output_col] = y_pred
+    
+    # WLS model
+    meas = df[input_col].to_numpy()
+    act  = df[actual_col].to_numpy()
+    
+    X_full = sm.add_constant(meas.reshape(-1, 1))  # keep a full matrix for later prediction
+    
+    # drop infinite
+    fit_mask = np.isfinite(meas) & np.isfinite(act)
+    X = X_full[fit_mask]
+    y = act[fit_mask]
+    df_fit = df.loc[fit_mask].copy()
+    
+    # Weights - based on standard deviation from replicate median
+    g = df_fit['Identifier 1'].astype('string').str.lower()
+    x = df_fit[input_col].to_numpy()
+    
+    # per-group median and MAD of measured values
+    med = df_fit.groupby(g, dropna=False)[input_col].transform('median').to_numpy()
+    mad = (df_fit.groupby(g, dropna=False)[input_col]
+              .transform(lambda s: np.median(np.abs(s - np.median(s))))).to_numpy() # mean absolute deviation - less senstivie to outlier than standard deviation
+    
+    eps = 1e-9 # avoid divide by zero
+    z = np.abs(x - med) / (1.4826 * mad + eps) # ((measured_value) - (median_value))/(scaled_mad) # Scaled mad assumes gaussian distribution
+    # wDown weight if far from median
+    w = 1.0 / (1.0 + z**2)
+    w = np.clip(w, 0.05, 1.0) # safety
+    w[~np.isfinite(w)] = 0.05
+    
+    model = sm.WLS(y, X, weights=w).fit()
+    
+    y_pred = model.predict(X_full)
     df[output_col] = y_pred
 
     # Linear equation information
@@ -352,17 +385,17 @@ def plot_VPDB_calibration(df, identifiers, el, actual_col, output_col, iso_label
     # y_line = model.predict(X_line)
     # plt.plot(x_line, y_line, linestyle='--', color='k')
 
-    # plt.plot([x.min()-1, x.max()+1], [x.min()-1, x.max()+1], linestyle='--', color='k')
-    if slope:
-        y1 = x.min()*slope + intercept
-        y2 = x.max()*slope + intercept
-        plt.plot([x.min(),x.max()], [y1,y2], linestyle='--', color='k')
+    plt.plot([x.min()-1, x.max()+1], [x.min()-1, x.max()+1], linestyle='--', color='k', label="1:1")
+    # if slope is not None and intercept is not None:
+    #     y1 = x.min()*slope + intercept
+    #     y2 = x.max()*slope + intercept
+    #     plt.plot([x.min(),x.max()], [y1,y2], linestyle='--', color='k', label = "OLS model")
 
     colors = ["orange", "blue", "green", "red", "k"]
     for i, identifier in enumerate(identifiers):
         sub_df = df[df['Identifier 1'].str.lower() == identifier].copy()
-        x = sub_df[output_col].to_numpy()
-        y = sub_df[actual_col].to_numpy()
+        x = sub_df[actual_col].to_numpy()
+        y = sub_df[output_col].to_numpy()
         label = identifier.upper()
         ec = "k"
         id = "VPDB_Model"
@@ -384,8 +417,84 @@ def plot_VPDB_calibration(df, identifiers, el, actual_col, output_col, iso_label
 
         plt.scatter(x, y, label=label, marker=m, color=c, alpha=0.6, s=100, edgecolor=ec)
 
-    plt.xlabel(f"Predicted {iso_label} (‰, VPDB)")
-    plt.ylabel(f"Measured/Actual {iso_label} (‰, VPDB)")
+    plt.xlabel(f"Actual {iso_label} (‰, VPDB)")
+    plt.ylabel(f"Predicted {iso_label} (‰, VPDB)")
+    plt.legend()
+    plt.tight_layout()
+
+    fig_name = f"{id}_{el}.png"
+    fig_path = os.path.join(fig, fig_name)
+    plt.savefig(fig_path)
+
+    plt.show()
+    
+def plot_VPDB_calibration_applied(df, identifiers, el, actual_col, output_col, iso_label, input_col = None):
+    """
+    Plot predicted versus measured/actual isotope ratio values to visualize VPDB calibration.
+
+    Creates a scatter plot comparing predicted isotope ratio values from the calibration
+    model against measured/actual values for EA_IRMS data. Includes a 1:1 reference line
+    and uses different markers and colors for standards, testing samples, and target samples.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing isotope data including predicted and measured/actual values.
+    identifiers : list of str
+        List containing identifiers for different standards, testing sample and target sample category.
+    el : str
+        Name of the chemical element associated with the inputted isotope tag
+        ("Nitrogen" or "Carbon").
+    actual_col : str
+        Name of the column containing actual standard values
+        (e.g., 'd15N(AIR) value', 'd13C(VPDB) value').
+    output_col : str
+        Name of the columns where the VPDB calibrated values will be outputted into
+        (e.g., "VPDB_d15N/14N", "VPDB_d13C/12C").
+    iso_label : str
+        Formatted plot label for corresponding isotope ratio.
+    input_col : str, optional
+        Name of the column in the dataset containing corresponding isotope ratio. Extracted from
+        'cfg' depending on drift correction. Only provided, if plotting is being done for samples.
+
+    Notes
+    -----
+    - The legend differentiates standard samples, testing sample, and target samples by marker style
+      and color.
+    - Saves the plot as "<id>_<el>.png" in the directory specified by the global 'fig' variable.
+    """
+
+    plt.figure(figsize=(6, 4))
+
+    x = df[output_col].to_numpy()
+    colors = ["orange", "blue", "green", "red", "k"]
+    for i, identifier in enumerate(identifiers):
+        sub_df = df[df['Identifier 1'].str.lower() == identifier].copy()
+        y = sub_df[output_col].to_numpy()
+        x = sub_df[actual_col].to_numpy()
+        label = identifier.upper()
+        ec = "k"
+        id = "VPDB_Model"
+        if identifier == 'bl sediment':
+            c = colors[3]
+            m = 's'
+            label = f"TEST: {identifier.upper()}"
+        elif identifier == 'sample':
+            sub_df = df[~df['Identifier 1'].str.lower().isin(identifiers[0:4])].copy()
+            x = sub_df[output_col].to_numpy()
+            y = sub_df[input_col].to_numpy()
+            c = colors[4]
+            m = 'x'
+            ec = None
+            id = "VPDB"
+        else:
+            c = colors[i]
+            m = 'o'
+
+        plt.scatter(x, y, label=label, marker=m, color=c, alpha=0.6, s=100, edgecolor=ec)
+
+    plt.xlabel(f"Measured {iso_label} (‰, VPDB)")
+    plt.ylabel(f"Predicted {iso_label} (‰, VPDB)")
     plt.legend()
     plt.tight_layout()
 
@@ -445,7 +554,7 @@ def apply_vpdb_calibration(df, model, rel, cfg, tag, slope, intercept):
     df[f"{output_col}_diff"] = cal_diff
     df[f"{output_col}_se"] = se
 
-    plot_VPDB_calibration(df, identifiers, el, actual_col, output_col, iso_label, slope, intercept, input_col)
+    plot_VPDB_calibration_applied(df, identifiers, el, actual_col, output_col, iso_label, input_col)
 
     rows = df[output_col].notna().sum()
     msg = f"VPDB calibration applied to {el}:\n  {tag} rows calibrated: {rows}"

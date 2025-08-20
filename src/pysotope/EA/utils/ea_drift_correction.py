@@ -186,7 +186,7 @@ def drop_standards(std_df, df, tag):
     print('')
     print(sub)
     idx_str = input("Enter indices that you wish to remove in a comma-separated manner. (Enter None if no values are to be removed)\n ")
-    if idx_str != 'None':
+    if idx_str:
         idxs = idx_str.split(",")
         idxs = [int(idx) for idx in idxs]
         std_df.drop(idxs, inplace=True)
