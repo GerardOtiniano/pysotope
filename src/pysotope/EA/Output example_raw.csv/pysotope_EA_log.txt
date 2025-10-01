@@ -1,4 +1,4 @@
-Log file created at 2025-08-20 14:11:28
+Log file created at 2025-08-20 15:19:14
 Python version: 3.12.11
 pandas version: 2.3.1
 matplotlib version: 3.10.5
@@ -24,22 +24,18 @@ IPython version: 9.4.0
 Drift Correction:
  
 'SORGHUM' standards found in the data.
- Nitrogen values at 301, 413 have been removed.
  
 Drift Correction Model for Nitrogen: 
- Equation of fitted line: y = -0.00·x + 1.51
- R-squared: 0.500
- Root Mean Squared Error (RMSE): 0.363
+ Equation of fitted line: y = -0.00·x + 4.87
+ R-squared: -0.023
+ Root Mean Squared Error (RMSE): 4.131
  
 Drift Correction Model for Carbon: 
  Equation of fitted line: y = -0.00·x + -14.42
  R-squared: 0.238
  Root Mean Squared Error (RMSE): 0.170
  
-User choice: 4) Apply correction for both Nitrogen and Carbon.
- 
-Drift correction applied to Nitrogen:
-  N rows corrected: 73
+User choice: 3) Apply correction for Carbon.
  
 Drift correction applied to Carbon:
   C rows corrected: 74
@@ -53,14 +49,14 @@ VPDB Calibration:
  'BL SEDIMENT' samples found for Carbon in the data.
  
 VPDB Calibration Model for Nitrogen: 
- Equation of fitted line: y = 0.95·x + 0.40
- R-squared: 0.889
- Root Mean Squared Error (RMSE): 0.646
+ Equation of fitted line: y = 0.84·x + 0.40
+ R-squared: 0.715
+ Root Mean Squared Error (RMSE): 0.958
 
  Testing VPDB Calibration on 'BL SEDIMENT' samples:
- Mean Prediction: 6.183
- Bias: 3.148
- Root Mean Squared Error (RMSE): 4.341
+ Mean Prediction: 5.445
+ Bias: 2.410
+ Root Mean Squared Error (RMSE): 3.332
  
 VPDB Calibration Model for Carbon: 
  Equation of fitted line: y = 1.01·x + 0.95
@@ -73,14 +69,14 @@ VPDB Calibration Model for Carbon:
  Root Mean Squared Error (RMSE): 0.145
  
  VPDB calibration applied to Nitrogen:
-  N rows calibrated: 73
+  N rows calibrated: 75
  
  VPDB calibration applied to Carbon:
   C rows calibrated: 74
  
 Summary of Nitrogen samples
-    mean_VPDB_d15N/14N  mean_d 15N/14N_corr  total_error
-0            7.091007             7.046142     0.614526
+    mean_VPDB_d15N/14N  total_error
+0            6.327198      0.82588
  
 Summary of Carbon samples
     mean_VPDB_d13C/12C  mean_d 13C/12C_corr  total_error
