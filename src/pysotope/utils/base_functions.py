@@ -63,16 +63,47 @@ def create_log_file(folder_path):
     return log_file_path
 
 
+def id_mask(df: pd.DataFrame, ids, col="Identifier 1", mode="all"):
+    """
+    Mask for identifying names - helps with carbon/hydrogen difference in # of linearity standards
+    """
+    ids = [str(x) for x in ids if pd.notna(x) and str(x).strip() != ""]
+    if len(ids) == 0:
+        return pd.Series(False, index=df.index)
+
+    s = df[col].astype(str)
+
+    if mode == "all":
+        m = pd.Series(True, index=df.index)
+        for x in ids:
+            m &= s.str.contains(x, na=False)
+        return m
+
+    if mode == "any":
+        m = pd.Series(False, index=df.index)
+        for x in ids:
+            m |= s.str.contains(x, na=False)
+        return m
+    raise ValueError("mode must be 'all' or 'any'")
+
 def append_to_log(log_file_path, log_message):
     # timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     with open(log_file_path, 'a', encoding='utf-8', errors='replace') as log_file:
         print(f" {log_message}", file=log_file)
 
+# def chain_subsetrer(std_df, std_meta, std_type):
+#     chains = list(std_meta[std_meta['type']==std_type]['chain length'])
+#     IDs = list(std_meta[std_meta['type']==std_type]['ID'])
+#     df = std_df[std_df['Identifier 1'].str.contains(IDs[0]) & std_df['Identifier 1'].str.contains(IDs[1])]
+#     df = df[df.chain.isin(chains)]
+#     return df, chains, IDs
 def chain_subsetrer(std_df, std_meta, std_type):
-    chains = list(std_meta[std_meta['type']==std_type]['chain length'])
-    IDs = list(std_meta[std_meta['type']==std_type]['ID'])
-    df = std_df[std_df['Identifier 1'].str.contains(IDs[0]) & std_df['Identifier 1'].str.contains(IDs[1])]
-    df = df[df.chain.isin(chains)]
+    chains = list(std_meta[std_meta['type'] == std_type]['chain length'])
+    IDs = list(std_meta[std_meta['type'] == std_type]['ID'])
+    mask = id_mask(std_df, IDs, col="Identifier 1", mode="any")
+    df = std_df[mask]
+    if len(chains) > 0:
+        df = df[df.chain.isin(chains)]
     return df, chains, IDs
 
 def import_data(data_location, folder_path, log_file_path, isotope, standards_df):
@@ -124,10 +155,12 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
 
     # Seperate samples, H3+, drift, and linearity standards
     linearity_std, linearity_chain_lengths, linearity_ids = chain_subsetrer(df, standards_df, "linearity")
-    append_to_log(log_file_path, f"Number of linearity standards analyzed: {len(linearity_std[linearity_std.chain == linearity_chain_lengths[1]])}")
+    # append_to_log(log_file_path, f"Number of linearity standards analyzed: {len(linearity_std[linearity_std.chain == linearity_chain_lengths[1]])}")
+    append_to_log(log_file_path, f"Number of linearity standards analyzed: {len(linearity_std)}")
     drift_std, drift_chain_lengths, drift_ids = chain_subsetrer(df, standards_df, "drift")
-    append_to_log(log_file_path, f"Number of Drift standards analyzed: {len(drift_std[drift_std.chain == drift_chain_lengths[1]])}")
-
+    # append_to_log(log_file_path, f"Number of Drift standards analyzed: {len(drift_std[drift_std.chain == drift_chain_lengths[1]])}")
+    append_to_log(log_file_path, f"Number of Drift standards analyzed: {len(drift_std)}")
+    
     # Remove first two drift runs
     drift_std = drift_std.sort_values('date-time_true')
     unique_time_signatures = drift_std["date-time"].unique() # identify unique drift runs
@@ -135,9 +168,13 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     drift_std = drift_std[~drift_std["date-time"].isin(time_signatures_to_remove)] # Remove first two runs - OSIBL ignores for variance
     append_to_log(log_file_path, "First two drift standards ignored.")
 
-    mask    = (df['Identifier 1'].str.contains(linearity_ids[0]) & df['Identifier 1'].str.contains(linearity_ids[1]))
+    # mask    = (df['Identifier 1'].str.contains(linearity_ids[0]) & df['Identifier 1'].str.contains(linearity_ids[1]))
+    # unknown = df[~mask]
+    mask = id_mask(df, linearity_ids, col="Identifier 1", mode="all")
     unknown = df[~mask]
-    mask    = (unknown['Identifier 1'].str.contains(drift_ids[0]) & unknown['Identifier 1'].str.contains(drift_ids[1]))
+    # mask    = (unknown['Identifier 1'].str.contains(drift_ids[0]) & unknown['Identifier 1'].str.contains(drift_ids[1]))
+    # unknown = unknown[~mask]
+    mask = id_mask(unknown, drift_ids, col="Identifier 1", mode="all")
     unknown = unknown[~mask]
     unknown = unknown[~unknown['Identifier 1'].str.contains('H3+')]
     rt_dict = ask_user_for_rt(log_file_path, df, isotope)
@@ -147,8 +184,11 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
         linearity_std   = process_dataframe(linearity_std, rt_dict, folder_path, log_file_path)
         drift_std = process_dataframe(drift_std, rt_dict, folder_path, log_file_path)
     else: unknown = unknown[unknown.chain.isin(['Phthalic acid','C16',"C18","C20","C22","C24","C24","C26","C28","C30","C32"])]
-    for i in [unknown, drift_std, linearity_std]:
-        i = i[~i.chain.isna()]
+    # for i in [unknown, drift_std, linearity_std]:
+    #     i = i[~i.chain.isna()]
+    unknown = unknown[~unknown.chain.isna()]
+    drift_std = drift_std[~drift_std.chain.isna()]
+    linearity_std = linearity_std[~linearity_std.chain.isna()]
     correction_log = make_correction_df()
     return linearity_std, drift_std, unknown, correction_log, pame
 

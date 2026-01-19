@@ -16,7 +16,7 @@ from .utils.config import CorrectionConfig
 
 
 
-def iso_process(pame=False, user_linearity_conditions = False):
+def iso_process(pame=False, user_linearity_conditions = False, min_area_threshold = None, include_parabolic=False):
     cfg = CorrectionConfig()
     import pandas as pd
     import matplotlib.pyplot as plt
@@ -44,6 +44,10 @@ def iso_process(pame=False, user_linearity_conditions = False):
 
     # Import data
     lin_std, drift_std, samples, correction_log, pame = import_data(loc, folder_path, log_file_path, isotope, standards_df)
+    if min_area_threshold is not None:
+        lin_std = lin_std[lin_std["area"]>min_area_threshold]
+        drift_std = drift_std[drift_std["area"]>min_area_threshold]
+        samples = samples[samples["area"]>min_area_threshold]
     uncorrected_samples = samples.copy()
     
     # Run standard plots for area
@@ -56,7 +60,9 @@ def iso_process(pame=False, user_linearity_conditions = False):
     # std_plot(lin_std, drift_std, folder_path=folder_path, fig_path=fig_path, dD=dD_temp,isotope=isotope)
 
     # Linearity (area) correction
-    drift_std, correction_log, lin_std, samples = process_linearity_correction(cfg, samples, drift_std, lin_std, dD_temp, correction_log, folder_path, fig_path, isotope, user_linearity_conditions, log_file_path=log_file_path)
+    drift_std, correction_log, lin_std, samples = process_linearity_correction(cfg, samples, drift_std, lin_std, dD_temp, correction_log, 
+                                                                               folder_path, fig_path, isotope, user_linearity_conditions, 
+                                                                               log_file_path=log_file_path, include_parabolic=include_parabolic)
 
     # VSMOW correction
     samples, standards = vsmow_correction(cfg, samples, lin_std, drift_std, correction_log, folder_path, fig_path, log_file_path, isotope, standards_df)
@@ -72,7 +78,7 @@ def iso_process(pame=False, user_linearity_conditions = False):
     # Remove outliers
     samples, excluded_samples = outlier_removal(samples, fig_path, log_file_path)
     raw_samples = samples
-
+    
     # Calculate mean values of replicate analyses
     samples = mean_values_with_uncertainty(samples, cfg, sample_name_header="Identifier 1", chain_header="chain", iso=isotope)
     if pame:

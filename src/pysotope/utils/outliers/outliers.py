@@ -78,6 +78,8 @@ def outlier_removal(unknown, fig_path, log_file_path):
             temp = unknown[unknown.chain == y]
             plt.scatter(temp.area, temp.VSMOW_dD, marker='x', c='k', label=str(y) + " samples", alpha = 0.5)
             plt.scatter(temp2.area, temp2.VSMOW_dD, c='red', ec='k', label=str(x) + ", " + str(y), alpha = 0.75)
+            plt.xlabel("Peak Area")
+            plt.ylabel("Isotope Value (‰)")
             plt.legend()
             plt.savefig(os.path.join(outlier_path, str(x)+' '+str(y)+'.png'), dpi=300, bbox_inches='tight')
             plt.show()

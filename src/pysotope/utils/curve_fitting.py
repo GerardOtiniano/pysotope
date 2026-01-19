@@ -31,10 +31,17 @@ def guess_linear_params(x, y):
     m, b = np.polyfit(x, y, 1)
     return (m, b)
 
+def parabolic_func(x, a, b, c):
+    return a * x**2 + b * x + c
+
+def _odr_parabolic(beta, x):
+    a, b, c = beta
+    return parabolic_func(x, a, b, c)
+
 def guess_decay_params(x, y):
     # assume f(0)=a+c≈y[0], f(∞)=c≈y[-1]
     x = np.asarray(x, dtype=float)
-    y = np.asarray(y, dtype=float) 
+    y = np.asarray(y, dtype=float)
     c0 = y[-1]
     a0 = y[0] - c0
     # b0 ≈ 1 / span
@@ -44,50 +51,17 @@ def guess_decay_params(x, y):
 def guess_growth_params(x, y):
     # assume f(0)=c≈y[0], f(∞)=a+c≈y[-1]
     x = np.asarray(x, dtype=float)
-    y = np.asarray(y, dtype=float) 
+    y = np.asarray(y, dtype=float)
     c0 = y[0]
     a0 = y[-1] - c0
     b0 = 1.0 / (x.max() - x.min() + 1e-6)
     return (a0 if a0>0 else 1.0, b0, c0)
 
+def guess_parabolic_params(x, y):
+    a, b, c = np.polyfit(x, y, 2)
+    return (a, b, c)
 
-# def fit_and_select_best(x, y):
-#     # 1) Linear
-#     p0_lin = guess_linear_params(x, y)
-#     popt_lin, pcov_lin = curve_fit(linear_func, x, y, p0=p0_lin, maxfev=2_000_000)
-#     resid_lin = y - linear_func(x, *popt_lin)
-#     sse_lin   = np.sum(resid_lin**2)
-
-#     # 2) Exponential decay
-#     p0_dec = guess_decay_params(x, y)
-#     popt_dec, pcov_dec = curve_fit(
-#         exp_decay, x, y, p0=p0_dec,
-#         bounds=([0, 0, -np.inf], [np.inf, np.inf, np.inf]),
-#         maxfev=2_000_000
-#     )
-#     resid_dec = y - exp_decay(x, *popt_dec)
-#     sse_dec   = np.sum(resid_dec**2)
-
-#     # 3) Exponential growth
-#     p0_gro = guess_growth_params(x, y)
-#     popt_gro, pcov_gro = curve_fit(
-#         exp_growth, x, y, p0=p0_gro,
-#         bounds=([0, 0, -np.inf], [np.inf, np.inf, np.inf]),
-#         maxfev=2_000_000
-#     )
-#     resid_gro = y - exp_growth(x, *popt_gro)
-#     sse_gro   = np.sum(resid_gro**2)
-
-#     # Compare SSEs
-#     sse_list   = [sse_lin, sse_dec, sse_gro]
-#     model_list = ["linear", "decay", "growth"]
-#     popt_list  = [popt_lin, popt_dec, popt_gro]
-#     pcov_list  = [pcov_lin, pcov_dec, pcov_gro]
-
-#     idx = int(np.argmin(sse_list))
-#     return model_list[idx], popt_list[idx], sse_list[idx], pcov_list[idx]
-
-def fit_and_select_best(x, y):
+def fit_and_select_best(x, y, include_parabolic):
     x = np.asarray(x, float); y = np.asarray(y, float)
     order = np.argsort(x)          # sort by area
     x = x[order]; y = y[order]
@@ -109,11 +83,24 @@ def fit_and_select_best(x, y):
         bounds=([0, 0, -np.inf], [np.inf, np.inf, np.inf]),
         maxfev=2_000_000)
     sse_gro = np.sum((y - exp_growth(x, *popt_gro))**2)
-
+    
     sse_list   = [sse_lin, sse_dec, sse_gro]
     model_list = ["linear", "decay", "growth"]
     popt_list  = [popt_lin, popt_dec, popt_gro]
     pcov_list  = [pcov_lin, pcov_dec, pcov_gro]
+    
+    if include_parabolic:
+        p0_par = guess_parabolic_params(x, y)
+        popt_par, pcov_par = curve_fit(
+            parabolic_func, x, y, p0=p0_par, maxfev=2_000_000)
+        sse_par = np.sum((y - parabolic_func(x, *popt_par))**2)
+
+        sse_list   = [sse_lin, sse_dec, sse_gro, sse_par,]
+        model_list = ["linear", "decay", "growth", "parabolic"]
+        popt_list  = [popt_lin, popt_dec, popt_gro, popt_par,]
+        pcov_list  = [pcov_lin, pcov_dec, pcov_gro, pcov_par,]
+    
+
     idx = int(np.argmin(sse_list))
     return model_list[idx], popt_list[idx], sse_list[idx], pcov_list[idx]
 
@@ -164,6 +151,15 @@ def prediction_std(model_name, x, popt, pcov, nsigma=1):
             np.ones_like(x)   # ∂y/∂c
         ])
 
+    elif model_name == "parabolic":
+        # y = a x² + b x + c
+        a, b, c = popt
+        J = np.column_stack([
+            x**2,            # ∂y/∂a
+            x,               # ∂y/∂b
+            np.ones_like(x)  # ∂y/∂c
+        ])
+
     else:
         raise ValueError(f"Unknown model '{model_name}'")
 
@@ -212,8 +208,16 @@ def fit_with_odr(x, y, sx=None, sy=None, model="linear", beta0=None, maxit=2000)
             b0 = 1.0 / (x.max() - x.min() + 1e-6)
             beta0 = [a0, b0, c0]
         k = 3
+
+    elif model == "parabolic":
+        f = odr.Model(_odr_parabolic)
+        if beta0 is None:
+            # use polyfit for initial guess
+            a, b, c = np.polyfit(x, y, 2)
+            beta0 = [a, b, c]
+        k = 3
     else:
-        raise ValueError("model must be 'linear'|'decay'|'growth'")
+        raise ValueError("model must be 'linear'|'decay'|'growth'|'parabolic'")
 
     data = odr.RealData(x, y, sx=sx, sy=sy)
     odr_inst = odr.ODR(data, f, beta0=beta0, maxit=maxit)
@@ -229,13 +233,17 @@ def fit_with_odr(x, y, sx=None, sy=None, model="linear", beta0=None, maxit=2000)
         "stopreason": out.stopreason,
         "success": out.info in (1, 2, 3),}
 
-def fit_and_select_best_eiv(x, y, sx=None, sy=None):
+def fit_and_select_best_eiv(x, y, sx=None, sy=None, include_parabolic=False):
     """
     ODR-based model selection. Returns (best_model, popt, pcov, details)
     Uses AIC-like score based on orthogonal SSE.
     """
     fits = {}
-    for name in ("linear", "decay", "growth"):
+    if include_parabolic:
+        models_to_test = ("linear", "decay", "growth", "parabolic")
+    else:
+        models_to_test = ("linear", "decay", "growth")
+    for name in models_to_test:
         try:
             res = fit_with_odr(x, y, sx=sx, sy=sy, model=name)
             n = len(x)
@@ -277,6 +285,16 @@ def prediction_std_eiv(model_name, x, popt, pcov, sx=None, nsigma=1):
         e = np.exp(-b * x)
         J = np.column_stack([1 - e, +a * x * e, np.ones_like(x)])
         slope = a * b * e
+
+    elif model_name == "parabolic":
+        # y = a x² + b x + c
+        a, b, c = popt
+        J = np.column_stack([
+            x**2,
+            x,
+            np.ones_like(x)])
+        slope = 2 * a * x + b
+
     else:
         raise ValueError(f"Unknown model '{model_name}'")
 

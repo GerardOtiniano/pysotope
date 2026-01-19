@@ -19,7 +19,8 @@ def lin_response(log_file_path):
         else:
             print("\nInvalid response. Try again.\n")
 
-def process_linearity_correction(cfg, samp, drift, lin_std, user_choice, correction_log, folder_path, fig_path, isotope, user_linearity_conditions, log_file_path):
+def process_linearity_correction(cfg, samp, drift, lin_std, user_choice, correction_log, folder_path, fig_path, isotope, 
+                                 user_linearity_conditions, log_file_path, include_parabolic):
     append_to_log(log_file_path, "Linearity correction")
     ex = pd.DataFrame()
     dD_id = cfg.dD_col
@@ -28,7 +29,7 @@ def process_linearity_correction(cfg, samp, drift, lin_std, user_choice, correct
     response = lin_response(log_file_path)
     if neg_response(response):
         print("\nSkipping linearity correction.\n")
-        return samp, correction_log, lin_std, drift
+        return drift, correction_log, lin_std, samp
     else:
         if user_linearity_conditions:
             while True:
@@ -46,13 +47,14 @@ def process_linearity_correction(cfg, samp, drift, lin_std, user_choice, correct
             chain_corr_val = 0
             correction_log.loc["Linearity"] = chain_corr_val
     chain_corr_val = float(chain_corr_val)
-    verify_lin_plot(norm, samp, fig_path, dD_id,log_file_path, cutoff_line=chain_corr_val, isotope=isotope)
+    verify_lin_plot(norm, samp, fig_path, dD_id,log_file_path, cutoff_line=chain_corr_val, isotope=isotope, include_parabolic=include_parabolic)
 
     user_input = input("\nDoes this look correct? (Y/N)\n").lower()
     if pos_response(user_input):
         cfg.linearity_applied = True
         lin_std, drift, samp, excluded_drift, excluded_lin_std, excluded_samp  = linearity_correction(drift, samp, lin_std, norm, chain_corr_val,
-                                                                                                      dD_id, folder_path, fig_path, log_file_path=log_file_path)
+                                                                                                      dD_id, folder_path, fig_path, log_file_path=log_file_path,
+                                                                                                      include_parabolic=include_parabolic)
         append_to_log(log_file_path, "- Minimum peak area to derive linearity correction: "+str(chain_corr_val))
         append_to_log(log_file_path, "- Number of drift standards excluded because of below threshold area: "+str(len(excluded_drift)))
         append_to_log(log_file_path, "- Number of linearity standards excluded because of below threshold area: "+str(len(excluded_lin_std)))
@@ -82,84 +84,9 @@ def process_linearity_correction(cfg, samp, drift, lin_std, user_choice, correct
         clear_output(wait=True)
         print("\nInvalid response. Try again.\n")
 
-
-# def linearity_correction(
-#     drift, samp, lin_std, lin_norm,
-#     area_cutoff, dD_id, folder_path, fig_path, log_file_path, fig=False):
-
-#     area_cutoff = float(area_cutoff)
-
-#     # ----------------- Filter each DF independently -----------------
-#     filtered_lin_norm = lin_norm.loc[lin_norm['area'] >= area_cutoff].copy()
-#     filtered_lin_std  = lin_std.loc[lin_std['area']   >= area_cutoff].copy()
-#     filtered_drift    = drift.loc[drift['area']       >= area_cutoff].copy()
-#     filtered_samp     = samp.loc[samp['area']         >= area_cutoff].copy()
-
-#     excluded_drift    = drift.loc[drift['area']       < area_cutoff].copy()
-#     excluded_lin_std  = lin_std.loc[lin_std['area']   < area_cutoff].copy()
-#     excluded_samp     = samp.loc[samp['area']         < area_cutoff].copy()
-
-#     # ----------------- Fit model on lin_norm -----------------
-#     xdata = filtered_lin_norm['area'].to_numpy(float)
-#     ydata = filtered_lin_norm[dD_id].to_numpy(float)
-
-#     best_model, popt, sse, pcov = fit_and_select_best(xdata, ydata)
-
-#     if best_model == "linear":
-#         y_fit = linear_func(xdata, *popt)
-#         parameter_text = f"y = {popt[0]:.6g} x + {popt[1]:.6g}"
-#     elif best_model == "decay":
-#         y_fit = exp_decay(xdata, *popt)   # a*exp(-b*x) + c
-#         parameter_text = f"y = {popt[0]:.6g} · exp(-{popt[1]:.6g} x) + {popt[2]:.6g}"
-#     else:  # "growth"
-#         y_fit = exp_growth(xdata, *popt)  # a*(1 - exp(-b*x)) + c
-#         parameter_text = f"y = {popt[0]:.6g} · (1 - exp(-{popt[1]:.6g} x)) + {popt[2]:.6g}"
-
-#     # R²
-#     tss = np.sum((ydata - ydata.mean()) ** 2)
-#     r_squared = 1.0 if tss == 0 else 1 - (sse / tss)
-
-#     append_to_log(log_file_path, f"- Best fit model type: {best_model}")
-#     append_to_log(log_file_path, f"- {best_model} model: {parameter_text}")
-#     append_to_log(log_file_path, f"- {best_model} model stats: R²: {r_squared:.3f} SSE: | {sse:.3f}")
-
-#     # ----------------- Reference (top 20% areas in lin_norm) -----------------
-#     lin_top_sort   = filtered_lin_norm.sort_values(by='area', ascending=False)
-#     top_count      = max(int(len(lin_top_sort) * 0.2), 1)
-#     lin_top_qt     = lin_top_sort.head(top_count)
-#     lin_reference  = lin_top_qt[dD_id].median()
-
-#     # Optional: quick asymptote check for decay/growth
-#     if best_model in ("decay", "growth"):
-#         a, b, c = popt
-#         asymptote = (a + c) if best_model == "growth" else c
-#         append_to_log(log_file_path, f"- Asymptote check: {asymptote:.3f} vs ref {lin_reference:.3f}")
-
-#     # ----------------- Apply correction per-DF -----------------
-#     filtered_lin_std = apply_corr(filtered_lin_std, best_model, popt, pcov, lin_reference, dD_id)
-#     filtered_drift   = apply_corr(filtered_drift,   best_model, popt, pcov, lin_reference, dD_id)
-#     filtered_samp    = apply_corr(filtered_samp,    best_model, popt, pcov, lin_reference, dD_id)
-
-#     return filtered_lin_std, filtered_drift, filtered_samp, excluded_drift, excluded_lin_std, excluded_samp
-
-# def apply_corr(df, model_name, popt, pcov, lin_reference, dD_id):
-#     x = df['area'].to_numpy(float)
-#     if model_name == "linear":
-#         yhat = linear_func(x, *popt)
-#     elif model_name == "decay":
-#         yhat = exp_decay(x, *popt)
-#     else:
-#         yhat = exp_growth(x, *popt)
-#     offset = lin_reference - yhat
-#     df = df.copy()
-#     df['linearity_corrected_dD'] = df[dD_id] + offset
-#     df['linearity_error']        = prediction_std(model_name, x, popt, pcov, nsigma=2)
-#     return df
-
-
 def linearity_correction(
     drift, samp, lin_std, lin_norm,
-    area_cutoff, dD_id, folder_path, fig_path, log_file_path, fig=False):
+    area_cutoff, dD_id, folder_path, fig_path, log_file_path, fig=False, include_parabolic=False):
     area_cutoff = float(area_cutoff)
     filtered_lin_norm = lin_norm.loc[lin_norm['area'] >= area_cutoff].copy()
     filtered_lin_std  = lin_std.loc[lin_std['area']   >= area_cutoff].copy()
@@ -180,17 +107,21 @@ def linearity_correction(
         y = trip["ybar"].to_numpy(float)
         sx = trip["sx"].to_numpy(float)   # ← this is your σx from triplicates
         sy = trip["sy"].to_numpy(float)   # ← this is your σy from triplicates
-        
-        best_model, popt, pcov, details = fit_and_select_best_eiv(x, y, sx=sx, sy=sy)
+
+        best_model, popt, pcov, details = fit_and_select_best_eiv(x, y, sx=sx, sy=sy, include_parabolic=include_parabolic)
         if best_model == "linear":
             y_fit = linear_func(xdata, *popt)
             parameter_text = f"y = {popt[0]:.6g} x + {popt[1]:.6g}"
         elif best_model == "decay":
             y_fit = exp_decay(xdata, *popt)
             parameter_text = f"y = {popt[0]:.6g} · exp(-{popt[1]:.6g} x) + {popt[2]:.6g}"
-        else:
+        elif best_model == "growth":
             y_fit = exp_growth(xdata, *popt)
             parameter_text = f"y = {popt[0]:.6g} · (1 - exp(-{popt[1]:.6g} x)) + {popt[2]:.6g}"
+        elif best_model == "parabolic":
+            y_fit = parabolic(xdata, *popt)
+            parameter_text = f"y = {popt[0]:.6g} x² + {popt[1]:.6g} x + {popt[2]:.6g}"
+
         sse_like = details['sse_ortho']
         tss = np.sum((ydata - ydata.mean()) ** 2)
         r_squared = 1.0 if tss == 0 else 1 - (np.sum((ydata - y_fit)**2) / tss)
@@ -200,16 +131,19 @@ def linearity_correction(
         used_eiv = True
 
     except Exception:
-        best_model, popt, sse, pcov = fit_and_select_best(xdata, ydata)
+        best_model, popt, sse, pcov = fit_and_select_best(xdata, ydata, include_parabolic=include_parabolic)
         if best_model == "linear":
             y_fit = linear_func(xdata, *popt)
             parameter_text = f"y = {popt[0]:.6g} x + {popt[1]:.6g}"
         elif best_model == "decay":
             y_fit = exp_decay(xdata, *popt)
             parameter_text = f"y = {popt[0]:.6g} · exp(-{popt[1]:.6g} x) + {popt[2]:.6g}"
-        else:  # growth
+        elif best_model == "growth":  # growth
             y_fit = exp_growth(xdata, *popt)
             parameter_text = f"y = {popt[0]:.6g} · (1 - exp(-{popt[1]:.6g} x)) + {popt[2]:.6g}"
+        elif best_model == "parabolic":  # growth
+            y_fit = parabolic_func(xdata, *popt)
+            parameter_text =  f"y = {popt[0]:.6g} · x^2 + {popt[1]:.6g} · x + {popt[2]:.6g}"
 
         tss = np.sum((ydata - ydata.mean()) ** 2)
         r_squared = 1.0 if tss == 0 else 1 - (sse / tss)
@@ -251,8 +185,10 @@ def apply_corr(df, model_name, popt, pcov, lin_reference, dD_id, used_eiv=False)
         yhat = linear_func(x, *popt)
     elif model_name == "decay":
         yhat = exp_decay(x, *popt)
-    else:
+    elif model_name == "growth":
         yhat = exp_growth(x, *popt)
+    elif model_name == "parabolic":
+        yhat = parabolic_func(x, *popt)
 
     offset = lin_reference - yhat
 
