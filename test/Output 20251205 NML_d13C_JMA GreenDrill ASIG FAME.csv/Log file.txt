@@ -1,4 +1,4 @@
-Log file created at 2026-01-18 19:27:08
+Log file created at 2026-01-29 19:01:44
 Python version: 3.12.11
 pandas version: 2.3.2
 matplotlib version: 3.10.6
@@ -10,47 +10,45 @@ IPython version: 9.5.0
 
 
  Isotope type: dC
-     ID       type chain length  isotope value   std  n  VSMOW accuracy check  \
-0  C18      drift          C18         -23.24  0.01  5                 False   
-1  C20  linearity          C20         -30.68  0.02  3                 False   
-2  C24      drift          C24         -26.57  0.02  5                  True   
+     ID       type chain length  isotope value   std   n  VSMOW accuracy check  \
+0  C18      drift          C18         -23.24  0.01   5                 False   
+1  C20  linearity          C20         -30.68  0.02   3                 False   
+2  C24      drift          C24         -26.57  0.02   5                  True   
+3  C28  linearity          C28         -20.00  0.50  10                 False   
 
    Use as Standard  
 0             True  
 1             True  
 2             True  
- Number of linearity standards analyzed: 21
+3             True  
+ Number of linearity standards analyzed: 41
  Number of Drift standards analyzed: 16
  First two drift standards ignored.
-User opted not to identify chains.; 2026-01-18 19:27:09
+User opted not to identify chains.; 2026-01-29 19:01:44
  Drift Correction
  - Drift correction applied: y
  - Applied weighted least squares regression function
  - WLS fit completed: b0=0.0064, b1=0.0133, R²=0.003
- - Drift correction applied to lin_std: n=21
+ - Drift correction applied to lin_std: n=41
  - Drift correction applied to samples: n=264
  - User accepted drift correction.
  - Weighted‑LS model: dC = 0.013 t_ctr + 0.006
  - Weighted‑LS model stats: Adj R² = 0.003 | p = 0.858 | SE = 0.073
  Linearity correction
-- Linearity normalization: anchor alignment at x*=16.11 (R0=median levels); 2026-01-18 19:27:11
+- Linearity normalization: anchor alignment at x*=16.11 (R0=median levels); 2026-01-29 19:01:51
  - Linearity application application: y
- - Best fit model type (EIV/ODR): linear
- - linear model: y = 0.00564053 x + 1.57721
- - linear model stats (ODR): pseudo-R²: -0.092 | Ortho SSE: 13.376
+ - Best fit model type (EIV/ODR): growth
+ - growth model: y = 0.762142 · (1 - exp(-0.208236 x)) + 1.41769
+ - growth model stats (ODR): pseudo-R²: 0.437 | Ortho SSE: 140.884
+ - Asymptote check: 2.180 vs ref 2.204
  - Minimum peak area to derive linearity correction: 0.0
  - Number of drift standards excluded because of below threshold area: 0
  - Number of linearity standards excluded because of below threshold area: 0
  - Number of samples excluded because of below threshold area: 0
  - Applied weighted least squares regression function
-VSMOW; 2026-01-18 19:27:18
-- Linear equation: dC)  = (1.02)(time) + -19.81; 2026-01-18 19:27:18
-- Adjusted R²: 1.00; 2026-01-18 19:27:18
-- p-value: 0.00; 2026-01-18 19:27:18
-- Standard Error: 0.01; 2026-01-18 19:27:18
-- Accuracy of C24 prediction (RMSE): 0.36; 2026-01-18 19:27:18
- Summary of standards
-   Component  mean_corrected_dD  sum_squared_error
-0       C18         -23.248868           1.236232
-1       C20         -30.671132           0.623172
-2       C24         -26.797345           1.235267
+VSMOW; 2026-01-29 19:01:56
+- Linear equation: dC)  = (0.92)(time) + -18.08; 2026-01-29 19:01:56
+- Adjusted R²: 0.36; 2026-01-29 19:01:56
+- p-value: 0.00; 2026-01-29 19:01:56
+- Standard Error: 0.18; 2026-01-29 19:01:56
+- Accuracy of C24 prediction (RMSE): 2.22; 2026-01-29 19:01:56
