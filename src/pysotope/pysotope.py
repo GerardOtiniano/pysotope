@@ -68,8 +68,7 @@ def iso_process(pame=False, user_linearity_conditions = False, min_area_threshol
     samples, standards = vsmow_correction(cfg, samples, lin_std, drift_std, correction_log, folder_path, fig_path, log_file_path, isotope, standards_df)
 
     # Methylation Correction
-    if isotope =="dD":
-        samples, standards = q_methylation(samples, standards, log_file_path);
+    samples, standards = q_methylation(samples, standards, isotope, log_file_path);
 
     # PAME
     if pame:

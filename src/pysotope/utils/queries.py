@@ -61,23 +61,94 @@ def lin_response(log_file_path):
         else:
             print("\nInvalid response. Try again.\n")
 
-def q_methylation(unknown, stds, log_file_path):  # , user_choice, response):
+# def q_methylation(unknown, stds, log_file_path):  # , user_choice, response):
+#     from .corrections.methanol import methyl_correction
+#     while True:
+#         response = input("\nMethanol dD is -72.5 ± 3.1 ‰. Is this correct? (Y/N)\n").lower()
+#         if pos_response(response):
+#             meth_dD = -72.5
+#             meth_std = 3.1
+#             unknown = methyl_correction(unknown, stds)
+#             break
+#         elif neg_response(response):
+#             meth_dD = input("\nMeasured dD value of the methanol used in FAME methylation?\n")
+#             meth_std = input("\nUncertainty of the methanol δD value?\n")
+#             unknown = methyl_correction(unknown, stds, mdD=float(meth_dD), mdD_err=float(meth_std))
+#             break
+#         else:
+#             print("\nInvalid response. Try again.\n")
+#     append_to_log(log_file_path, f"Methanol dD: {meth_dD} ± {meth_std} ‰")
+#     return unknown, stds
+
+def q_methylation(unknown, stds, isotope, log_file_path):
     from .corrections.methanol import methyl_correction
+
+    # -----------------------------
+    # Ask if user wants correction
+    # -----------------------------
     while True:
-        response = input("\nMethanol dD is -72.5 ± 3.1 ‰. Is this correct? (Y/N)\n").lower()
-        if pos_response(response):
-            meth_dD = -72.5
-            meth_std = 3.1
-            unknown = methyl_correction(unknown, stds)
+        apply_response = input(
+            f"\nDo you want to apply methanol correction to {isotope}? (Y/N)\n"
+        ).lower()
+
+        if pos_response(apply_response):
+            apply_methanol = True
             break
-        elif neg_response(response):
-            meth_dD = input("\nMeasured dD value of the methanol used in FAME methylation?\n")
-            meth_std = input("\nUncertainty of the methanol δD value?\n")
-            unknown = methyl_correction(unknown, stds, mdD=float(meth_dD), mdD_err=float(meth_std))
+        elif neg_response(apply_response):
+            apply_methanol = False
             break
         else:
             print("\nInvalid response. Try again.\n")
-    append_to_log(log_file_path, f"Methanol dD: {meth_dD} ± {meth_std} ‰")
+
+    meth_col = f"Methanol Corrected {isotope}"
+
+    # -----------------------------
+    # If user skips correction
+    # -----------------------------
+    if not apply_methanol:
+        # Ensure downstream compatibility
+        unknown[meth_col] = unknown[isotope]
+        append_to_log(log_file_path, f"Methanol correction for {isotope}: NOT applied")
+        return unknown, stds
+
+    # -----------------------------
+    # If user applies correction
+    # -----------------------------
+    while True:
+        response = input(
+            f"\nMethanol {isotope} is -72.5 ± 3.1 ‰. Is this correct? (Y/N)\n"
+        ).lower()
+
+        if pos_response(response):
+            meth_val = -72.5
+            meth_std = 3.1
+            unknown = methyl_correction(unknown, stds)
+            break
+
+        elif neg_response(response):
+            meth_val = float(
+                input(f"\nMeasured {isotope} value of the methanol used?\n")
+            )
+            meth_std = float(
+                input(f"\nUncertainty of the methanol {isotope} value?\n")
+            )
+
+            unknown = methyl_correction(
+                unknown,
+                stds,
+                mdD=meth_val,
+                mdD_err=meth_std
+            )
+            break
+
+        else:
+            print("\nInvalid response. Try again.\n")
+
+    append_to_log(
+        log_file_path,
+        f"Methanol correction for {isotope}: {meth_val} ± {meth_std} ‰"
+    )
+
     return unknown, stds
 
 def q_original_phthalic_value():

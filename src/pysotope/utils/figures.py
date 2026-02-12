@@ -286,7 +286,7 @@ def standard_check_figures(cfg, stds, fig_path, label, vsmow, isotope):
         plt.scatter(temp['VSMOW_dD_actual'], temp[label], label = j)
     plt.ylabel(f"Measured {label}")
     plt.xlabel(f"VSMOW {label}")
-    plt.scatter([cl_val]*len(stds[stds.chain==f"{cl}"]), stds[stds.chain==f"{cl}"]['label'], label = cl)
+    plt.scatter([cl_val]*len(stds[stds.chain==f"{cl}"]), stds[stds.chain==f"{cl}"][label], label = cl)
     plt.legend()
     plt.savefig(f"{fig_path}/Standards_RawVsVSMOW.png", dpi=300)
     plt.close()
