@@ -10,6 +10,7 @@ from .queries import query_file_location
 import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
+from .chains.chains import get_selected_chains
 
 def make_correction_df():
     correction_log_data = {
@@ -183,7 +184,13 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
         unknown   = unknown[unknown.chain!="None"]
         linearity_std   = process_dataframe(linearity_std, rt_dict, folder_path, log_file_path)
         drift_std = process_dataframe(drift_std, rt_dict, folder_path, log_file_path)
-    else: unknown = unknown[unknown.chain.isin(['Phthalic acid','C16',"C18","C20","C22","C24","C24","C26","C28","C30","C32"])]
+    # else: unknown = unknown[unknown.chain.isin(['Phthalic acid','C16',"C18","C20","C22","C24","C24","C26","C28","C30","C32"])]
+    # else: unknown = unknown[unknown.chain.isin(['Phthalic acid',"C18","C20","C24","C28"])]
+    else:
+        selected_chains = get_selected_chains()
+        unknown = unknown[
+            unknown.chain.isin(['Phthalic acid'] + selected_chains)
+        ]
     # for i in [unknown, drift_std, linearity_std]:
     #     i = i[~i.chain.isna()]
     unknown = unknown[~unknown.chain.isna()]
