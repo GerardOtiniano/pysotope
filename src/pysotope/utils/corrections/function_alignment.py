@@ -67,6 +67,5 @@ def build_norm_with_fallback(lin_std, y_col, area_col="area", chain_col="chain",
     norm = df.copy()
     norm[y_col] = norm.apply(lambda r: r[y_col] - chain_means[r[chain_col]] + global_center, axis=1)
     append_to_log(log_file_path, "- Linearity normalization: fallback to per-chain mean centering (moment matching)")
-    print(norm)
     norm[y_col] = norm[y_col]+norm[y_col].min()+1
     return norm, {"method": "moment_center", "global_center": global_center, "chain_means": chain_means}
