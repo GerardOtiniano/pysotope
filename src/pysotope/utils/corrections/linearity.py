@@ -23,7 +23,7 @@ def process_linearity_correction(cfg, samp, drift, lin_std, user_choice, correct
                                  user_linearity_conditions, log_file_path, include_parabolic):
     append_to_log(log_file_path, "Linearity correction")
     ex = pd.DataFrame()
-    dD_id = cfg.dD_col
+    dD_id = isotope#cfg.dD_col
     norm, norm_meta = build_norm_with_fallback(lin_std, y_col = dD_id, area_col="area", chain_col="chain", log_file_path = log_file_path)
     norm[dD_id] = norm[dD_id]-norm[dD_id].min()+1
     response = lin_response(log_file_path)
@@ -54,7 +54,7 @@ def process_linearity_correction(cfg, samp, drift, lin_std, user_choice, correct
         cfg.linearity_applied = True
         lin_std, drift, samp, excluded_drift, excluded_lin_std, excluded_samp  = linearity_correction(drift, samp, lin_std, norm, chain_corr_val,
                                                                                                       dD_id, folder_path, fig_path, log_file_path=log_file_path,
-                                                                                                      include_parabolic=include_parabolic)
+                                                                                                      isotope = isotope, include_parabolic=include_parabolic)
         append_to_log(log_file_path, "- Minimum peak area to derive linearity correction: "+str(chain_corr_val))
         append_to_log(log_file_path, "- Number of drift standards excluded because of below threshold area: "+str(len(excluded_drift)))
         append_to_log(log_file_path, "- Number of linearity standards excluded because of below threshold area: "+str(len(excluded_lin_std)))
@@ -75,18 +75,18 @@ def process_linearity_correction(cfg, samp, drift, lin_std, user_choice, correct
 
     elif neg_response(user_input):
         print("\nSkipping linearity correction.\n")
-        time.sleep(0)  # Wait for 1 second
+        # time.sleep(0)  # Wait for 1 second
         clear_output(wait=True)
         return drift, correction_log, lin_std, samp
 
     else:
-        time.sleep(0)
+        # time.sleep(0)
         clear_output(wait=True)
         print("\nInvalid response. Try again.\n")
 
 def linearity_correction(
     drift, samp, lin_std, lin_norm,
-    area_cutoff, dD_id, folder_path, fig_path, log_file_path, fig=False, include_parabolic=False):
+    area_cutoff, dD_id, folder_path, fig_path, log_file_path, isotope, fig=False, include_parabolic=False):
     area_cutoff = float(area_cutoff)
     filtered_lin_norm = lin_norm.loc[lin_norm['area'] >= area_cutoff].copy()
     filtered_lin_std  = lin_std.loc[lin_std['area']   >= area_cutoff].copy()
@@ -163,17 +163,17 @@ def linearity_correction(
         asymptote = (a + c) if best_model == "growth" else c
         append_to_log(log_file_path, f"- Asymptote check: {asymptote:.3f} vs ref {lin_reference:.3f}")
 
-    filtered_lin_std = apply_corr(filtered_lin_std, best_model, popt, pcov, lin_reference, dD_id,
+    filtered_lin_std = apply_corr(filtered_lin_std, best_model, popt, pcov, lin_reference, dD_id, isotope,
                                   used_eiv=used_eiv)
-    filtered_drift   = apply_corr(filtered_drift,   best_model, popt, pcov, lin_reference, dD_id,
+    filtered_drift   = apply_corr(filtered_drift,   best_model, popt, pcov, lin_reference, dD_id, isotope,
                                   used_eiv=used_eiv)
-    filtered_samp    = apply_corr(filtered_samp,    best_model, popt, pcov, lin_reference, dD_id,
+    filtered_samp    = apply_corr(filtered_samp,    best_model, popt, pcov, lin_reference, dD_id, isotope,
                                   used_eiv=used_eiv)
 
     return filtered_lin_std, filtered_drift, filtered_samp, excluded_drift, excluded_lin_std, excluded_samp
 
 
-def apply_corr(df, model_name, popt, pcov, lin_reference, dD_id, used_eiv=False):
+def apply_corr(df, model_name, popt, pcov, lin_reference, dD_id, isotope, used_eiv=False):
     """
     If used_eiv=True, compute prediction uncertainty with x-error contribution
     (requires optional column 'sigma_area' for per-row sx; defaults to 0).
@@ -193,7 +193,7 @@ def apply_corr(df, model_name, popt, pcov, lin_reference, dD_id, used_eiv=False)
     offset = lin_reference - yhat
 
     out = df.copy()
-    out['linearity_corrected_dD'] = out[dD_id].to_numpy(float) + offset
+    out[f'linearity_corrected_{isotope}'] = out[dD_id].to_numpy(float) + offset
 
     if used_eiv:
         sx = out['sigma_area'].to_numpy(float) if 'sigma_area' in out.columns else None

@@ -144,16 +144,14 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     if not column_found:
         raise ValueError("The expected header for the isotope system was not found in the csv file. Please verify the isotope system of interest.")
 
-    #df['date-time_true'] = pd.to_datetime(df['Date'] + ' ' + df['Time'], format='%m/%d/%y %H:%M:%S')
     df['date-time_true'] = df.apply(lambda row: try_parse_date(row['Date'] + ' ' + row['Time']), axis=1)
     df['date-time'] = date2num(df['date-time_true'])
     # shift time relative to maximum (or minimum)
-    #df['time_rel']=df['date-time']-df['date-time'].max()
     df['time_rel']=df['date-time']-df['date-time'].min()+1 # add 1 to avoid zero value for logarithmic regression correction
 
     # Check if PAME is in dataset
     # if df['chain'].astype(str).str.contains("phthalic", case=False, na=False).any():
-    if df['chain'].astype(str).str.contains("phthalic", case=False, na=False).any():
+    if df['chain'].astype(str).str.contains(r"phthalic|PAME", case=False, na=False).any():
         pame = True
         append_to_log(log_file_path, 'PAME detected in analysis')
         print("PAMEs detected.\nThe calculated methanol value from the PAMEs will be displayed to the user and stored in the log file.\n")
@@ -172,12 +170,8 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     drift_std = drift_std[~drift_std["date-time"].isin(time_signatures_to_remove)] # Remove first two runs - OSIBL ignores for variance
     append_to_log(log_file_path, "First two drift standards ignored.")
 
-    # mask    = (df['Identifier 1'].str.contains(linearity_ids[0]) & df['Identifier 1'].str.contains(linearity_ids[1]))
-    # unknown = df[~mask]
     mask = id_mask(df, linearity_ids, col="Identifier 1", mode="all")
     unknown = df[~mask]
-    # mask    = (unknown['Identifier 1'].str.contains(drift_ids[0]) & unknown['Identifier 1'].str.contains(drift_ids[1]))
-    # unknown = unknown[~mask]
     mask = id_mask(unknown, drift_ids, col="Identifier 1", mode="all")
     unknown = unknown[~mask]
     unknown = unknown[~unknown['Identifier 1'].str.contains('H3+')]
@@ -301,16 +295,16 @@ def process_dataframe(df, rt_dict, folder_path, log_file_path):
 
 def load_standards(isotope: str="dD") -> pd.DataFrame:
     HERE       = Path(__file__).resolve().parent
-    CSV_DIR    = HERE / "vsmow_standards"
+    CSV_DIR    = HERE / "reference_standards"
     CSV_DIR.mkdir(exist_ok=True, parents=True)
 
-    path = CSV_DIR / f"vsmow_{isotope}.csv"
+    path = CSV_DIR / f"RS_{isotope}.csv"
     if not path.exists():
         # first time: dump defaults and return them
         return standard_editor(isotope)
     df = pd.read_csv(path, dtype={"type":str, "chain length":str})
     df = df[df["Use as Standard"]==True]
     # coerce the boolean column
-    df["VSMOW accuracy check"] = df["VSMOW accuracy check"].astype(str).str.lower() == "true"
+    df["RS accuracy check"] = df["RS accuracy check"].astype(str).str.lower() == "true"
     df["Use as Standard"] = df["Use as Standard"].astype(str).str.lower() == "true"
     return df

@@ -122,7 +122,7 @@ def q_methylation(unknown, stds, isotope, log_file_path):
         if pos_response(response):
             meth_val = -72.5
             meth_std = 3.1
-            unknown = methyl_correction(unknown, stds)
+            unknown = methyl_correction(unknown, stds, isotope)
             break
 
         elif neg_response(response):
@@ -136,6 +136,7 @@ def q_methylation(unknown, stds, isotope, log_file_path):
             unknown = methyl_correction(
                 unknown,
                 stds,
+                isotope,
                 mdD=meth_val,
                 mdD_err=meth_std
             )
@@ -152,7 +153,7 @@ def q_methylation(unknown, stds, isotope, log_file_path):
     return unknown, stds
 
 def q_original_phthalic_value():
-    o_ph_dD = input("Enter isotopic value of phthalic acid: ")
+    o_ph_dD = input("Enter isotope value of phthalic acid: ")
     return o_ph_dD
 
 def q_output():

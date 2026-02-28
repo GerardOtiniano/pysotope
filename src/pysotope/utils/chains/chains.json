@@ -1,5 +1,5 @@
 {
-    "selected": "n_acids",
+    "selected": "n_acids_pame",
     "sets": {
         "n_acids": [
             "C16",
@@ -28,6 +28,18 @@
             "C24",
             "C29",
             "C33"
+        ],
+        "n_acids_pame": [
+            "C16",
+            "C18",
+            "C20",
+            "C22",
+            "C24",
+            "C26",
+            "C28",
+            "C30",
+            "C32",
+            "PAME"
         ]
     }
 }

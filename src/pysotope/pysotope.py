@@ -12,12 +12,9 @@ from .utils.uncertainty_and_output import *
 from .utils.figures import *
 from .utils.base_functions import *
 from .utils.config import CorrectionConfig
-
-
-
+from .utils.corrections.pame import *
 
 def iso_process(pame=False, user_linearity_conditions = False, min_area_threshold = None, include_parabolic=False):
-    cfg = CorrectionConfig()
     import pandas as pd
     import matplotlib.pyplot as plt
     import numpy as np
@@ -34,6 +31,7 @@ def iso_process(pame=False, user_linearity_conditions = False, min_area_threshol
 
     # Query isotope system
     isotope = isotope_type()
+    cfg = CorrectionConfig(isotope)
 
     # Setup output folder
     folder_path, fig_path, results_path, loc, log_file_path = create_folder(isotope)
@@ -64,15 +62,15 @@ def iso_process(pame=False, user_linearity_conditions = False, min_area_threshol
                                                                                folder_path, fig_path, isotope, user_linearity_conditions, 
                                                                                log_file_path=log_file_path, include_parabolic=include_parabolic)
   
-    # VSMOW correction
-    samples, standards = vsmow_correction(cfg, samples, lin_std, drift_std, correction_log, folder_path, fig_path, log_file_path, isotope, standards_df)
-
-    # Methylation Correction
-    samples, standards = q_methylation(samples, standards, isotope, log_file_path);
+    # Reference standard correction
+    samples, standards = reference_standard_correction(cfg, samples, lin_std, drift_std, correction_log, folder_path, fig_path, log_file_path, isotope, standards_df)
 
     # PAME
     if pame:
         samples, pame_unknown = calculate_methanol_dD(samples, isotope, log_file_path)
+        
+    # Methylation Correction
+    samples, standards = q_methylation(samples, standards, isotope, log_file_path);
 
     # Remove outliers
     samples, excluded_samples = outlier_removal(samples, fig_path, log_file_path)
@@ -81,13 +79,10 @@ def iso_process(pame=False, user_linearity_conditions = False, min_area_threshol
     # Calculate mean values of replicate analyses
     samples = mean_values_with_uncertainty(samples, cfg, sample_name_header="Identifier 1", chain_header="chain", iso=isotope)
     if pame:
-        pame_unknown = mean_values_with_uncertainty(pame_unknown, sample_name_header="Identifier 1", chain_header="chain", iso=isotope)
+        pame_unknown = mean_values_with_uncertainty(pame_unknown, cfg = cfg, sample_name_header="Identifier 1", chain_header="chain", iso=isotope)
     else:
         pame_unknown = None
     # Final Data Correction and Plot
     output_results(raw_samples, samples, standards, pame_unknown, folder_path, fig_path, results_path, isotope, pame, log_file_path, cfg)
     
-
-
-
 
