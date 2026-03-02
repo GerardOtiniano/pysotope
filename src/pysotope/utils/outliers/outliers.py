@@ -45,7 +45,7 @@ def remove_standards_PA(l,d):
     
 # Samples
 
-def outlier_detect(unknown, log_file_path):
+def outlier_detect(unknown, log_file_path, isotope):
     while True:
         try:
             unique_outlier = float(input("Input the standard deviation acceptable above which samples will be considered highly variable (best to use 0):\n"))
@@ -54,7 +54,7 @@ def outlier_detect(unknown, log_file_path):
         except ValueError:
             print("Please enter a valid number.")
     # Calculate Z-scores of the standard deviations
-    unknown['Std Dev Z-Score'] = zscore(unknown['VSMOW_dD'])
+    unknown['Std Dev Z-Score'] = zscore(unknown[f"RS_{isotope}"])
 
     # Identify samples with high standard deviation
     high_std_dev = unknown[np.abs(unknown['Std Dev Z-Score']) > np.float64(unique_outlier)]
@@ -63,21 +63,21 @@ def outlier_detect(unknown, log_file_path):
     high_dD = unknown[cond2.isin(cond1)]
     return high_dD
 
-def outlier_removal(unknown, fig_path, log_file_path):
+def outlier_removal(unknown, fig_path, log_file_path, isotope):
     #unknown = total_uncertainty(unknown)
     excluded = pd.DataFrame()
     id_outliers = input("Check for outliers? (Y/N):\n")
     unknown_final = unknown.copy() # moved outside forloop ~GAO~ 26/01/24
     if pos_response(id_outliers):
         outlier_path = create_subfolder(fig_path, 'Outliers')
-        high_unknown = outlier_detect(unknown, log_file_path).copy()
+        high_unknown = outlier_detect(unknown, log_file_path, isotope).copy()
         unique_groups = [(x, y) for x in high_unknown["Identifier 1"].unique() for y in high_unknown[high_unknown["Identifier 1"] == x]["chain"].unique()]
         for x, y in unique_groups:
             temp2 = high_unknown[(high_unknown["Identifier 1"] == x) & (high_unknown["chain"] == y)]
-            print(temp2[["Identifier 1", "chain", "VSMOW_dD", 'area']]) # print the replicate analyses of interest
+            print(temp2[["Identifier 1", "chain", f"RS_{isotope}", 'area']]) # print the replicate analyses of interest
             temp = unknown[unknown.chain == y]
-            plt.scatter(temp.area, temp.VSMOW_dD, marker='x', c='k', label=str(y) + " samples", alpha = 0.5)
-            plt.scatter(temp2.area, temp2.VSMOW_dD, c='red', ec='k', label=str(x) + ", " + str(y), alpha = 0.75)
+            plt.scatter(temp.area, temp[f"RS_{isotope}"], marker='x', c='k', label=str(y) + " samples", alpha = 0.5)
+            plt.scatter(temp2.area, temp2[f"RS_{isotope}"], c='red', ec='k', label=str(x) + ", " + str(y), alpha = 0.75)
             plt.xlabel("Peak Area")
             plt.ylabel("Isotope Value (‰)")
             plt.legend()

@@ -61,26 +61,7 @@ def lin_response(log_file_path):
         else:
             print("\nInvalid response. Try again.\n")
 
-# def q_methylation(unknown, stds, log_file_path):  # , user_choice, response):
-#     from .corrections.methanol import methyl_correction
-#     while True:
-#         response = input("\nMethanol dD is -72.5 ± 3.1 ‰. Is this correct? (Y/N)\n").lower()
-#         if pos_response(response):
-#             meth_dD = -72.5
-#             meth_std = 3.1
-#             unknown = methyl_correction(unknown, stds)
-#             break
-#         elif neg_response(response):
-#             meth_dD = input("\nMeasured dD value of the methanol used in FAME methylation?\n")
-#             meth_std = input("\nUncertainty of the methanol δD value?\n")
-#             unknown = methyl_correction(unknown, stds, mdD=float(meth_dD), mdD_err=float(meth_std))
-#             break
-#         else:
-#             print("\nInvalid response. Try again.\n")
-#     append_to_log(log_file_path, f"Methanol dD: {meth_dD} ± {meth_std} ‰")
-#     return unknown, stds
-
-def q_methylation(unknown, stds, isotope, log_file_path):
+def q_methylation(unknown, stds, isotope, log_file_path, meth_val = -72.5, meth_std = 3.1):
     from .corrections.methanol import methyl_correction
 
     # -----------------------------
@@ -116,13 +97,12 @@ def q_methylation(unknown, stds, isotope, log_file_path):
     # -----------------------------
     while True:
         response = input(
-            f"\nMethanol {isotope} is -72.5 ± 3.1 ‰. Is this correct? (Y/N)\n"
+            # f"\nMethanol {isotope} is {meth_val.round(2)} ± {meth_std.round(2)} ‰. Is this correct? (Y/N)\n"
+            f"\nMethanol {isotope} is {round(float(meth_val),2)} ± {round(float(meth_std),2)} ‰. Is this correct? (Y/N)\n"
         ).lower()
 
         if pos_response(response):
-            meth_val = -72.5
-            meth_std = 3.1
-            unknown = methyl_correction(unknown, stds, isotope)
+            unknown = methyl_correction(unknown, stds, isotope, log_file_path = log_file_path, mdD = meth_val, mdD_err = meth_std)
             break
 
         elif neg_response(response):
@@ -138,23 +118,40 @@ def q_methylation(unknown, stds, isotope, log_file_path):
                 stds,
                 isotope,
                 mdD=meth_val,
-                mdD_err=meth_std
+                mdD_err=meth_std,
+                log_file_path = log_file_path
             )
             break
 
         else:
             print("\nInvalid response. Try again.\n")
 
-    append_to_log(
-        log_file_path,
-        f"Methanol correction for {isotope}: {meth_val} ± {meth_std} ‰"
-    )
+    append_to_log(log_file_path, f"{isotope} value of methanol used for correction: {meth_val} ± {meth_std} ‰")
 
     return unknown, stds
 
-def q_original_phthalic_value():
-    o_ph_dD = input("Enter isotope value of phthalic acid: ")
-    return o_ph_dD
+def q_original_phthalic_value(isotope):
+    """
+    Prompt user for original phthalic isotope value and its uncertainty.
+    Repeats until valid float values are entered.
+    """
+    while True:
+        try:
+            o_ph = float(input(f"Enter {isotope} value of PAME: ").strip())
+            break
+        except ValueError:
+            print("Invalid input. Please enter a numeric value (decimals allowed).")
+
+    while True:
+        try:
+            o_ph_std = float(input(f"Enter {isotope} uncertainty of PAME: ").strip())
+            if o_ph_std < 0:
+                print("Uncertainty must be non-negative.")
+                continue
+            break
+        except ValueError:
+            print("Invalid input. Please enter a numeric value (decimals allowed).")
+    return o_ph, o_ph_std
 
 def q_output():
     o_fp = input("Provide a folder path for the output data:\n")

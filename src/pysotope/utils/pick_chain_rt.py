@@ -6,15 +6,15 @@ from pathlib import Path
 from matplotlib.widgets import TextBox
 from IPython import get_ipython
 
-def load_standards(isotope: str) -> pd.DataFrame:
-    HERE    = Path(__file__).resolve().parent
-    CSV_DIR = HERE / "reference_standards"
-    CSV_DIR.mkdir(exist_ok=True, parents=True)
-
-    path = CSV_DIR / f"RS_{isotope}.csv"
-    df   = pd.read_csv(path, dtype={"type":str, "chain length":str})
-    df["RS accuracy check"] = df["RS accuracy check"].astype(str).str.lower()=="true"
-    return df
+# def load_standards(isotope: str) -> pd.DataFrame:
+#     HERE    = Path(__file__).resolve().parent
+#     CSV_DIR = HERE / "reference_standards"
+#     CSV_DIR.mkdir(exist_ok=True, parents=True)
+#
+#     path = CSV_DIR / f"RS_{isotope}.csv"
+#     df   = pd.read_csv(path, dtype={"type":str, "chain length":str})
+#     df["RS accuracy check"] = df["RS accuracy check"].astype(str).str.lower()=="true"
+#     return df
 
 def pick_chain_retention(
     isotope: str,

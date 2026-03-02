@@ -33,10 +33,67 @@ def _csv_path(isotope: str) -> Path:
 
 def standard_editor() -> pd.DataFrame:
     """
-    Show an editable grid of the standards CSV using core ipywidgets.
-    Buttons:
-      - Add row: appends a blank (NaN) row to the editor.
-      - Save: writes back to CSV.
+    Launch an interactive editor for VSMOW reference standards.
+
+    This function opens a Jupyter-based graphical interface (ipywidgets)
+    that allows users to view, modify, add, or remove reference standard
+    entries used in isotope normalization. The editor operates directly
+    on the CSV files stored within ``utils/reference_standards`` and
+    updates them in-place upon user confirmation.
+
+    Parameters
+    ----------
+
+    Functionality
+    -------------
+    The editor provides:
+
+    - Display of current reference standards as an editable table.
+    - Modification of:
+        - Standard type (e.g., drift, linearity, VSMOW)
+        - Chain length designation
+        - Accepted isotope value
+        - Associated analytical uncertainty (std)
+        - Boolean inclusion flag ("Use as Standard")
+    - Addition of new rows populated with NaN values.
+    - Deletion of existing rows.
+    - Saving updates to the corresponding CSV file.
+    - Automatic creation of default standards if none exist.
+
+    Data Structure
+    --------------
+    The standards file contains the following required columns:
+
+    - ``type`` : str
+        Role of the standard (e.g., drift, linearity).
+    - ``chain length`` : str
+        Chain designation (e.g., C16, C18, PAME).
+    - ``isotope value`` : float
+        Accepted isotope value for calibration.
+    - ``std`` : float
+        Analytical uncertainty of the accepted value.
+    - ``Use as Standard`` : bool
+        Flag indicating whether the entry is used in regression fitting.
+
+    Returns
+    -------
+    None
+        This function is interactive and does not return a value.
+        All modifications are written directly to disk.
+
+    Notes
+    -----
+    - This function is intended for use in Jupyter environments.
+    - Changes take effect in subsequent runs of ``iso_process``.
+    - Incorrect modification of standards may affect drift,
+      linearity, and VSMOW normalization accuracy.
+    - The editor ensures required columns are preserved but does not
+      enforce statistical validation of entered values.
+
+    See Also
+    --------
+    iso_process : Main isotope processing pipeline.
+    utils.reference_standards : Directory containing standards CSV files.
     """
     isotope = isotope_type()
     path = _csv_path(isotope)

@@ -92,25 +92,25 @@ def append_to_log(log_file_path, log_message):
     with open(log_file_path, 'a', encoding='utf-8', errors='replace') as log_file:
         print(f" {log_message}", file=log_file)
 
-def chain_subsetrer(std_df, std_meta, std_type):
-    chains = list(std_meta[std_meta['type'] == std_type]['chain length'])
-    IDs    = list(std_meta[std_meta['type'] == std_type]['ID'])
-    mask = id_mask(std_df, IDs, col="Identifier 1", mode="any")
-    if std_type in ["linearity", "drift"] and "Identifier 2" in std_df.columns:
-        mask = mask & (std_df["Identifier 2"] == "STANDARD")
-    df = std_df[mask]
-    if len(chains) > 0:
-        df = df[df.chain.isin(chains)]
-    return df, chains, IDs
-
 # def chain_subsetrer(std_df, std_meta, std_type):
 #     chains = list(std_meta[std_meta['type'] == std_type]['chain length'])
-#     IDs = list(std_meta[std_meta['type'] == std_type]['ID'])
+#     IDs    = list(std_meta[std_meta['type'] == std_type]['ID'])
 #     mask = id_mask(std_df, IDs, col="Identifier 1", mode="any")
+#     if std_type in ["linearity", "drift"] and "Identifier 2" in std_df.columns:
+#         mask = mask & (std_df["Identifier 2"] == "STANDARD")
 #     df = std_df[mask]
 #     if len(chains) > 0:
 #         df = df[df.chain.isin(chains)]
 #     return df, chains, IDs
+
+def chain_subsetrer(std_df, std_meta, std_type):
+    chains = list(std_meta[std_meta['type'] == std_type]['chain length'])
+    IDs = list(std_meta[std_meta['type'] == std_type]['ID'])
+    mask = id_mask(std_df, IDs, col="Identifier 1", mode="any")
+    df = std_df[mask]
+    if len(chains) > 0:
+        df = df[df.chain.isin(chains)]
+    return df, chains, IDs
 
 def import_data(data_location, folder_path, log_file_path, isotope, standards_df):
     """
@@ -300,10 +300,12 @@ def load_standards(isotope: str="dD") -> pd.DataFrame:
 
     path = CSV_DIR / f"RS_{isotope}.csv"
     if not path.exists():
+        print("Didn't find standards")
         # first time: dump defaults and return them
         return standard_editor(isotope)
     df = pd.read_csv(path, dtype={"type":str, "chain length":str})
     df = df[df["Use as Standard"]==True]
+    df = df[df["Use as Standard"]!=False]
     # coerce the boolean column
     df["RS accuracy check"] = df["RS accuracy check"].astype(str).str.lower() == "true"
     df["Use as Standard"] = df["Use as Standard"].astype(str).str.lower() == "true"

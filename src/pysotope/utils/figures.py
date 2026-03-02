@@ -277,18 +277,18 @@ def drift_std_corr(norm, isotope, drift_std, t_mean, intercept, slope, fig_path)
 
 
 def standard_check_figures(cfg, stds, fig_path, label, vsmow, isotope):
-    cl = vsmow[vsmow['VSMOW accuracy check']==True]['chain length'].values[0]
-    cl_val = vsmow[vsmow['VSMOW accuracy check']==True]['isotope value'].values[0]
+    cl = vsmow[vsmow['RS accuracy check']==True]['chain length'].values[0]
+    cl_val = vsmow[vsmow['RS accuracy check']==True]['isotope value'].values[0]
     fig = plt.figure()
     plt.title(f"Raw {label}")
     for j in vsmow['chain length'].unique():
         temp = stds[stds.chain==j]
-        plt.scatter(temp['VSMOW_dD_actual'], temp[label], label = j)
+        plt.scatter(temp[f'RS_{isotope}_actual'], temp[label], label = j)
     plt.ylabel(f"Measured {label}")
     plt.xlabel(f"VSMOW {label}")
     plt.scatter([cl_val]*len(stds[stds.chain==f"{cl}"]), stds[stds.chain==f"{cl}"][label], label = cl)
     plt.legend()
-    plt.savefig(f"{fig_path}/Standards_RawVsVSMOW.png", dpi=300)
+    plt.savefig(f"{fig_path}/Standards_Raw_Vs_ReferenceStandard.png", dpi=300)
     plt.close()
 
     if cfg.drift_applied:
@@ -296,24 +296,24 @@ def standard_check_figures(cfg, stds, fig_path, label, vsmow, isotope):
         plt.title("Drift Corrected")
         for j in vsmow['chain length'].unique():
             temp = stds[stds.chain==j]
-            plt.scatter(temp[f'VSMOW_{label}_actual'], temp[f'drift_corrected_{label}'], label =j)
+            plt.scatter(temp[f'RS_{label}_actual'], temp[f'drift_corrected_{label}'], label =j)
         plt.scatter([cl_val]*len(stds[stds.chain==f"{cl}"]), stds[stds.chain==f"{cl}"][f'drift_corrected_{label}'], label= cl)
         plt.legend()
         plt.ylabel(f"Measured {label}")
-        plt.xlabel(f"VSMOW {label}")
-        plt.savefig(f"{fig_path}/Standards_DriftCorrVsVSMOW.png", dpi=300)
+        plt.xlabel(f"RS {label}")
+        plt.savefig(f"{fig_path}/Standards_DriftCorrVsRS.png", dpi=300)
         plt.close()
     if cfg.linearity_applied:
         fig = plt.figure()
         plt.title("Linearity Corrected")
         for j in vsmow['chain length'].unique():
             temp = stds[stds.chain==j]
-            plt.scatter(temp[f'VSMOW_{label}_actual'], temp[f'linearity_corrected_{label}'], label =j)
+            plt.scatter(temp[f'RS_{label}_actual'], temp[f'linearity_corrected_{label}'], label =j)
         plt.scatter([cl_val]*len(stds[stds.chain==f"{cl}"]), stds[stds.chain==f"{cl}"][f'linearity_corrected_{label}'], label = cl)
         plt.legend()
         plt.ylabel(f"Measured {label}")
-        plt.xlabel(f"VSMOW {label}")
-        plt.savefig(f"{fig_path}/Standards_LinearityCorrVsVSMOW.png", dpi=300)
+        plt.xlabel(f"RS {label}")
+        plt.savefig(f"{fig_path}/Standards_LinearityCorrVsRS.png", dpi=300)
         plt.close()
 
 

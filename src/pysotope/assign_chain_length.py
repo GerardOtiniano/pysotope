@@ -7,6 +7,68 @@ from IPython.display import display
 import os
 
 def assign_chain_length(output_location=None, rt_min=0, rt_max=2500, chain_lengths = ['C16', 'C18', 'C20', 'C22', 'C24', 'C26', 'C28', 'C30', 'C32']):
+    """
+    Interactively assign chain-length labels to compounds based on retention time.
+
+    This function allows the user to define retention-time (RT) windows
+    corresponding to specific chain-length compounds (e.g., C16–C32).
+    The assigned chain labels are written to a configuration file
+    and used downstream in the ``iso_process`` correction workflow.
+
+    The function is typically used during initial setup or when
+    chromatographic conditions change and retention times must be
+    re-mapped.
+
+    Parameters
+    ----------
+    output_location : str or pathlib.Path, optional
+        Path to the processed output file containing retention time
+        information. If provided, the file is loaded and used to
+        visualize compound RT positions for interactive selection.
+        If None, the function may prompt the user to select a file.
+
+    rt_min : float, default=0
+        Minimum retention time (in seconds) considered when assigning
+        chain-length windows.
+
+    rt_max : float, default=2500
+        Maximum retention time (in seconds) considered when assigning
+        chain-length windows.
+
+    chain_lengths : list of str, default=['C16', 'C18', ..., 'C32']
+        List of chain identifiers to be assigned. Each entry represents
+        a compound whose RT window will be defined interactively.
+        Custom chain sets may be provided if needed.
+
+    Returns
+    -------
+    None
+        This function does not return a value. Instead, it updates
+        the chain configuration file (e.g., ``chains.json``) stored
+        within the package directory.
+
+    Functionality
+    -------------
+    - Loads peak retention time data.
+    - Displays chromatographic information for user inspection.
+    - Allows interactive selection of RT windows for each chain length.
+    - Saves updated chain definitions to configuration.
+    - These definitions are used by ``iso_process`` for compound matching.
+
+    Notes
+    -----
+    - Accurate retention-time assignment is critical for correct
+      standard identification and downstream corrections.
+    - If chromatographic conditions shift (e.g., column change,
+      temperature program modification), chain windows should be
+      redefined.
+    - The saved configuration affects all subsequent processing runs.
+
+    See Also
+    --------
+    iso_process : Main isotope correction pipeline.
+    utils.chains.chains : Configuration loading and saving utilities.
+    """
     csv_path = input("Provide file location: ").strip()
 
     while csv_path.startswith(("'", '"')) and csv_path.endswith(("'", '"')):
