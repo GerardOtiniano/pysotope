@@ -1,4 +1,5 @@
 [![DOI](https://zenodo.org/badge/867841029.svg)](https://doi.org/10.5281/zenodo.16749399)
+[![Documentation Status](https://readthedocs.org/projects/pysotope/badge/?version=latest)](https://pysotope.readthedocs.io/en/latest/?badge=latest)
 [![Pysotope Logo](misc/logo.png)](https://github.com/GerardOtiniano/pysotope/blob/main/misc/logo.png)
 # pysotope (v.1.12.3).
 
