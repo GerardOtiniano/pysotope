@@ -1,6 +1,6 @@
-from .pysotope import iso_process
-from .standard_editor import standard_editor
-from .assign_chain_length import assign_chain_length
+from .processing import iso_process
+from .standards import standard_editor
+from .chains import assign_chain_length
 from .EA.eaAnalyze import ea_process
 from .utils.chains.chain_editor import edit_chains
 

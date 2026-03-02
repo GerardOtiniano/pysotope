@@ -1,0 +1,368 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GC-IRMS Processing &mdash; Pysotope 1.12.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=c976af01"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Pysotope Documentation" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Pysotope
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">GC-IRMS Processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pysotope.iso_process"><code class="docutils literal notranslate"><span class="pre">iso_process()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pysotope.assign_chain_length"><code class="docutils literal notranslate"><span class="pre">assign_chain_length()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pysotope.standard_editor"><code class="docutils literal notranslate"><span class="pre">standard_editor()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#elemental-analyzer-ea">Elemental Analyzer (EA)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pysotope.ea_process"><code class="docutils literal notranslate"><span class="pre">ea_process()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Pysotope</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">GC-IRMS Processing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/pysotope.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gc-irms-processing">
+<h1>GC-IRMS Processing<a class="headerlink" href="#gc-irms-processing" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="pysotope.iso_process">
+<span class="sig-prename descclassname"><span class="pre">pysotope.</span></span><span class="sig-name descname"><span class="pre">iso_process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_linearity_conditions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_area_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_parabolic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pysotope/processing.html#iso_process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pysotope.iso_process" title="Link to this definition"></a></dt>
+<dd><p>Main processing pipeline for isotope data measured on the OSIBL GC-IRMS.</p>
+<p>This function orchestrates the full correction workflow, including:
+chain assignment, drift correction, linearity correction, VSMOW scaling,
+optional methanol and PAME corrections, uncertainty propagation,
+figure generation, and final result export.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>user_linearity_conditions</strong> (<em>dict</em><em> or </em><em>None</em><em>, </em><em>default=None</em>) – Optional user-specified configuration for linearity correction.
+If provided, overrides automatically detected linearity parameters.
+Expected to contain regression settings and/or standard selections
+used during linearity calibration.</p></li>
+<li><p><strong>min_area_threshold</strong> (<em>bool</em><em> or </em><em>float</em><em>, </em><em>default=False</em>) – If False, no minimum peak area filtering is applied.
+If True, a default minimum area threshold is used.
+If a float is provided, it is interpreted as the minimum
+integrated peak area required for inclusion in processing.</p></li>
+<li><p><strong>include_parabolic</strong> (<em>bool</em><em>, </em><em>default=False</em>) – If True, includes a parabolic (second-order) term in the linearity
+correction model. If False, a linear model is used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>raw_samples</strong> (<em>pandas.DataFrame</em>) – The original imported dataset with chain assignments and
+intermediate annotations added, prior to full correction.</p></li>
+<li><p><strong>samples</strong> (<em>pandas.DataFrame</em>) – Fully corrected sample data including:
+- Drift-corrected isotope values
+- Linearity-corrected values
+- Reference standard (e.g., VSMOW, VPDB)-scaled isotope values
+- Optional methanol correction
+- Optional calculation of methanol hydrogen or carbon values from PAMEs
+- Propagated analytical uncertainties
+- Standard-normalized results</p></li>
+<li><p><strong>standards</strong> (<em>pandas.DataFrame</em>) – Processed reference standards used in drift, linearity,
+and reference standard normalization, including fitted parameters
+and residual diagnostics.</p></li>
+<li><p><strong>pame_unknown</strong> (<em>pandas.DataFrame or None</em>) – If <cite>pame=True</cite>, contains methanol-corrected isotope values
+for methylated compounds. Otherwise, None.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function controls the full correction sequence in the following order:</p>
+<ol class="arabic simple">
+<li><p>Configuration loading</p></li>
+<li><p>Data import and chain assignment</p></li>
+<li><p>Outlier handling (if applicable)</p></li>
+<li><p>Drift correction (linear regression over time)</p></li>
+<li><p>Linearity correction (linear, exponential, or parabolic regression over peak area)</p></li>
+<li><p>Reference standard normalization</p></li>
+<li><p>Optional methanol correction</p></li>
+<li><p>Optional methanol hydrogen or carbon isotope calculation from PAME</p></li>
+<li><p>Uncertainty propagation</p></li>
+<li><p>Figure generation and output export</p></li>
+</ol>
+<p>All intermediate correction steps are logged internally to ensure
+traceability and reproducibility.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pysotope.assign_chain_length">
+<span class="sig-prename descclassname"><span class="pre">pysotope.</span></span><span class="sig-name descname"><span class="pre">assign_chain_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rt_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rt_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chain_lengths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['C16',</span> <span class="pre">'C18',</span> <span class="pre">'C20',</span> <span class="pre">'C22',</span> <span class="pre">'C24',</span> <span class="pre">'C26',</span> <span class="pre">'C28',</span> <span class="pre">'C30',</span> <span class="pre">'C32']</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pysotope/chains.html#assign_chain_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pysotope.assign_chain_length" title="Link to this definition"></a></dt>
+<dd><p>Interactively assign chain-length labels to compounds based on retention time.</p>
+<p>This function allows the user to define retention-time (RT) windows
+corresponding to specific chain-length compounds (e.g., C16–C32).
+The assigned chain labels are written to a configuration file
+and used downstream in the <code class="docutils literal notranslate"><span class="pre">iso_process</span></code> correction workflow.</p>
+<p>The function is typically used during initial setup or when
+chromatographic conditions change and retention times must be
+re-mapped.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_location</strong> (<em>str</em><em> or </em><em>pathlib.Path</em><em>, </em><em>optional</em>) – Path to the processed output file containing retention time
+information. If provided, the file is loaded and used to
+visualize compound RT positions for interactive selection.
+If None, the function may prompt the user to select a file.</p></li>
+<li><p><strong>rt_min</strong> (<em>float</em><em>, </em><em>default=0</em>) – Minimum retention time (in seconds) considered when assigning
+chain-length windows.</p></li>
+<li><p><strong>rt_max</strong> (<em>float</em><em>, </em><em>default=2500</em>) – Maximum retention time (in seconds) considered when assigning
+chain-length windows.</p></li>
+<li><p><strong>chain_lengths</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>default=</em><em>[</em><em>'C16'</em><em>, </em><em>'C18'</em><em>, </em><em>...</em><em>, </em><em>'C32'</em><em>]</em>) – List of chain identifiers to be assigned. Each entry represents
+a compound whose RT window will be defined interactively.
+Custom chain sets may be provided if needed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>None</em> – This function does not return a value. Instead, it updates
+the chain configuration file (e.g., <code class="docutils literal notranslate"><span class="pre">chains.json</span></code>) stored
+within the package directory.</p></li>
+<li><p><em>Functionality</em></p></li>
+<li><p><em>————-</em></p></li>
+<li><p><em>- Loads peak retention time data.</em></p></li>
+<li><p><em>- Displays chromatographic information for user inspection.</em></p></li>
+<li><p><em>- Allows interactive selection of RT windows for each chain length.</em></p></li>
+<li><p><em>- Saves updated chain definitions to configuration.</em></p></li>
+<li><ul>
+<li><p>These definitions are used by <code class="docutils literal notranslate"><span class="pre">iso_process</span></code> for compound matching.</p></li>
+</ul>
+</li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Accurate retention-time assignment is critical for correct
+standard identification and downstream corrections.</p></li>
+<li><p>If chromatographic conditions shift (e.g., column change,
+temperature program modification), chain windows should be
+redefined.</p></li>
+<li><p>The saved configuration affects all subsequent processing runs.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pysotope.standard_editor">
+<span class="sig-prename descclassname"><span class="pre">pysotope.</span></span><span class="sig-name descname"><span class="pre">standard_editor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pysotope/standards.html#standard_editor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pysotope.standard_editor" title="Link to this definition"></a></dt>
+<dd><p>Launch an interactive editor for VSMOW reference standards.</p>
+<p>This function opens a Jupyter-based graphical interface (ipywidgets)
+that allows users to view, modify, add, or remove reference standard
+entries used in isotope normalization. The editor operates directly
+on the CSV files stored within <code class="docutils literal notranslate"><span class="pre">utils/reference_standards</span></code> and
+updates them in-place upon user confirmation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Functionality</strong></p></li>
+<li><p><strong>-------------</strong></p></li>
+<li><p><strong>provides</strong> (<em>The editor</em>)</p></li>
+<li><p><strong>table.</strong> (<em>- Display</em><em> of </em><em>current reference standards as an editable</em>)</p></li>
+<li><p><strong>of</strong> (<em>- Modification</em>) – <ul>
+<li><p>Standard type (e.g., drift, linearity, VSMOW)</p></li>
+<li><p>Chain length designation</p></li>
+<li><p>Accepted isotope value</p></li>
+<li><p>Associated analytical uncertainty (std)</p></li>
+<li><p>Boolean inclusion flag (“Use as Standard”)</p></li>
+</ul>
+</p></li>
+<li><p><strong>values.</strong> (<em>- Addition</em><em> of </em><em>new rows populated with NaN</em>)</p></li>
+<li><p><strong>rows.</strong> (<em>- Deletion</em><em> of </em><em>existing</em>)</p></li>
+<li><p><strong>file.</strong> (<em>- Saving updates to the corresponding CSV</em>)</p></li>
+<li><p><strong>exist.</strong> (<em>- Automatic creation</em><em> of </em><em>default standards if none</em>)</p></li>
+<li><p><strong>Structure</strong> (<em>Data</em>)</p></li>
+<li><p><strong>--------------</strong></p></li>
+<li><p><strong>columns</strong> (<em>The standards file contains the following required</em>)</p></li>
+<li><p><strong>type</strong> (<em>-</em>) – Role of the standard (e.g., drift, linearity).</p></li>
+<li><p><strong>length</strong> (<em>- chain</em>) – Chain designation (e.g., C16, C18, PAME).</p></li>
+<li><p><strong>value</strong> (<em>- isotope</em>) – Accepted isotope value for calibration.</p></li>
+<li><p><strong>std</strong> (<em>-</em>) – Analytical uncertainty of the accepted value.</p></li>
+<li><p><strong>Standard</strong> (<em>- Use as</em>) – Flag indicating whether the entry is used in regression fitting.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>This function is interactive and does not return a value.
+All modifications are written directly to disk.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>This function is intended for use in Jupyter environments.</p></li>
+<li><p>Changes take effect in subsequent runs of <code class="docutils literal notranslate"><span class="pre">iso_process</span></code>.</p></li>
+<li><p>Incorrect modification of standards may affect drift,
+linearity, and VSMOW normalization accuracy.</p></li>
+<li><p>The editor ensures required columns are preserved but does not
+enforce statistical validation of entered values.</p></li>
+</ul>
+</dd></dl>
+
+</section>
+<section id="elemental-analyzer-ea">
+<h1>Elemental Analyzer (EA)<a class="headerlink" href="#elemental-analyzer-ea" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="pysotope.ea_process">
+<span class="sig-prename descclassname"><span class="pre">pysotope.</span></span><span class="sig-name descname"><span class="pre">ea_process</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pysotope/EA/eaAnalyze.html#ea_process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pysotope.ea_process" title="Link to this definition"></a></dt>
+<dd><p>Process Elemental Analyzer (EA-IRMS) isotope data through
+drift correction, VPDB calibration, and uncertainty propagation.</p>
+<p>This function executes the full EA isotope processing workflow.
+It imports raw EA-IRMS data, applies instrumental drift correction,
+performs VPDB normalization using reference standards, calculates
+analytical uncertainties, and writes intermediate and final results
+to disk.</p>
+<section id="processing-steps">
+<h2>Processing Steps<a class="headerlink" href="#processing-steps" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Create project output directory structure.</p></li>
+<li><p>Load EA reference standards.</p></li>
+<li><p>Import raw EA data file.</p></li>
+<li><p>Apply time-based drift correction.</p></li>
+<li><p>Apply VPDB scale calibration.</p></li>
+<li><p>Compute propagated analytical uncertainties.</p></li>
+<li><p>Export intermediate and final processed datasets.</p></li>
+</ol>
+</section>
+<section id="workflow-details">
+<h2>Workflow Details<a class="headerlink" href="#workflow-details" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>Drift Correction</dt><dd><p>Corrects for temporal instrument drift using standard measurements
+throughout the analytical run. The correction parameters are saved
+for use in subsequent calibration steps.</p>
+</dd>
+<dt>VPDB Calibration</dt><dd><p>Converts drift-corrected isotope values to the VPDB scale using
+regression-based normalization against certified reference standards.</p>
+</dd>
+<dt>Uncertainty Propagation</dt><dd><p>Calculates final analytical uncertainty by combining:
+- Measurement precision
+- Drift model uncertainty
+- Calibration regression uncertainty</p>
+</dd>
+</dl>
+</section>
+<section id="outputs">
+<h2>Outputs<a class="headerlink" href="#outputs" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>Drift_Results.csv</dt><dd><p>Dataset after drift correction.</p>
+</dd>
+<dt>VPDB_Results.csv</dt><dd><p>Dataset after VPDB normalization.</p>
+</dd>
+<dt>EA_processed_&lt;project_name&gt;.csv</dt><dd><p>Final dataset including calibrated isotope values and
+propagated analytical uncertainties.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Results are written directly to the output directory.
+The function does not return a DataFrame.</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>This function assumes EA reference standards are properly
+defined in the EA standards configuration file.</p></li>
+<li><p>All processing steps append metadata and results to a log file
+for traceability and reproducibility.</p></li>
+<li><p>The processing pipeline is deterministic and does not include
+interactive user input.</p></li>
+<li><p>Errors are propagated analytically using first-order
+variance propagation methods.</p></li>
+</ul>
+</section>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="Pysotope Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Dr. Gerard Otiniano and Dr. Elizabeth Thomas.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

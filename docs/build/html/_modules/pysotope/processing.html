@@ -1,0 +1,266 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pysotope.processing &mdash; Pysotope 1.12.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c976af01"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Pysotope
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/pysotope.html">GC-IRMS Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/pysotope.html#elemental-analyzer-ea">Elemental Analyzer (EA)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Pysotope</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pysotope.processing</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pysotope.processing</h1><div class="highlight"><pre>
+<span></span><span class="c1"># src/OSIBL_correction</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.corrections.drift</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.corrections.linearity</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.corrections.methanol</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.corrections.vsmow</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.outliers.outliers</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.queries</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.regression</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.uncertainty_and_output</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.figures</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.base_functions</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">CorrectionConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.corrections.pame</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<div class="viewcode-block" id="iso_process">
+<a class="viewcode-back" href="../../api/pysotope.html#pysotope.iso_process">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">iso_process</span><span class="p">(</span><span class="n">user_linearity_conditions</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">min_area_threshold</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">include_parabolic</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Main processing pipeline for isotope data measured on the OSIBL GC-IRMS.</span>
+<span class="sd">    </span>
+<span class="sd">     This function orchestrates the full correction workflow, including:</span>
+<span class="sd">     chain assignment, drift correction, linearity correction, VSMOW scaling,</span>
+<span class="sd">     optional methanol and PAME corrections, uncertainty propagation,</span>
+<span class="sd">     figure generation, and final result export.</span>
+<span class="sd">    </span>
+<span class="sd">     Parameters</span>
+<span class="sd">     ----------</span>
+<span class="sd">     user_linearity_conditions : dict or None, default=None</span>
+<span class="sd">         Optional user-specified configuration for linearity correction.</span>
+<span class="sd">         If provided, overrides automatically detected linearity parameters.</span>
+<span class="sd">         Expected to contain regression settings and/or standard selections</span>
+<span class="sd">         used during linearity calibration.</span>
+<span class="sd">    </span>
+<span class="sd">     min_area_threshold : bool or float, default=False</span>
+<span class="sd">         If False, no minimum peak area filtering is applied.</span>
+<span class="sd">         If True, a default minimum area threshold is used.</span>
+<span class="sd">         If a float is provided, it is interpreted as the minimum</span>
+<span class="sd">         integrated peak area required for inclusion in processing.</span>
+<span class="sd">    </span>
+<span class="sd">     include_parabolic : bool, default=False</span>
+<span class="sd">         If True, includes a parabolic (second-order) term in the linearity</span>
+<span class="sd">         correction model. If False, a linear model is used.</span>
+<span class="sd">    </span>
+<span class="sd">     Returns</span>
+<span class="sd">     -------</span>
+<span class="sd">     raw_samples : pandas.DataFrame</span>
+<span class="sd">         The original imported dataset with chain assignments and</span>
+<span class="sd">         intermediate annotations added, prior to full correction.</span>
+<span class="sd">    </span>
+<span class="sd">     samples : pandas.DataFrame</span>
+<span class="sd">         Fully corrected sample data including:</span>
+<span class="sd">         - Drift-corrected isotope values</span>
+<span class="sd">         - Linearity-corrected values</span>
+<span class="sd">         - Reference standard (e.g., VSMOW, VPDB)-scaled isotope values</span>
+<span class="sd">         - Optional methanol correction</span>
+<span class="sd">         - Optional calculation of methanol hydrogen or carbon values from PAMEs</span>
+<span class="sd">         - Propagated analytical uncertainties</span>
+<span class="sd">         - Standard-normalized results</span>
+<span class="sd">    </span>
+<span class="sd">     standards : pandas.DataFrame</span>
+<span class="sd">         Processed reference standards used in drift, linearity,</span>
+<span class="sd">         and reference standard normalization, including fitted parameters</span>
+<span class="sd">         and residual diagnostics.</span>
+<span class="sd">    </span>
+<span class="sd">     pame_unknown : pandas.DataFrame or None</span>
+<span class="sd">         If `pame=True`, contains methanol-corrected isotope values</span>
+<span class="sd">         for methylated compounds. Otherwise, None.</span>
+<span class="sd">    </span>
+<span class="sd">     Notes</span>
+<span class="sd">     -----</span>
+<span class="sd">     This function controls the full correction sequence in the following order:</span>
+<span class="sd">    </span>
+<span class="sd">     1. Configuration loading</span>
+<span class="sd">     2. Data import and chain assignment</span>
+<span class="sd">     3. Outlier handling (if applicable)</span>
+<span class="sd">     4. Drift correction (linear regression over time)</span>
+<span class="sd">     5. Linearity correction (linear, exponential, or parabolic regression over peak area)</span>
+<span class="sd">     6. Reference standard normalization</span>
+<span class="sd">     7. Optional methanol correction</span>
+<span class="sd">     8. Optional methanol hydrogen or carbon isotope calculation from PAME</span>
+<span class="sd">     9. Uncertainty propagation</span>
+<span class="sd">     10. Figure generation and output export</span>
+<span class="sd">    </span>
+<span class="sd">     All intermediate correction steps are logged internally to ensure</span>
+<span class="sd">     traceability and reproducibility.</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+     
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_output</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">linregress</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.dates</span><span class="w"> </span><span class="kn">import</span> <span class="n">date2num</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">zscore</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">HuberRegressor</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">stats</span>
+
+    <span class="c1"># Query isotope system</span>
+    <span class="n">isotope</span> <span class="o">=</span> <span class="n">isotope_type</span><span class="p">()</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">CorrectionConfig</span><span class="p">(</span><span class="n">isotope</span><span class="p">)</span>
+
+    <span class="c1"># Setup output folder</span>
+    <span class="n">folder_path</span><span class="p">,</span> <span class="n">fig_path</span><span class="p">,</span> <span class="n">results_path</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span> <span class="n">log_file_path</span> <span class="o">=</span> <span class="n">create_folder</span><span class="p">(</span><span class="n">isotope</span><span class="p">)</span>
+
+    <span class="c1"># Set standards</span>
+    <span class="n">standards_df</span> <span class="o">=</span> <span class="n">load_standards</span><span class="p">(</span><span class="n">isotope</span><span class="p">)</span><span class="c1">#query_stds(alt_stds, isotope)</span>
+    <span class="n">append_to_log</span><span class="p">(</span><span class="n">log_file_path</span><span class="p">,</span> <span class="n">standards_df</span><span class="p">)</span>
+
+    <span class="c1"># Import data</span>
+    <span class="n">lin_std</span><span class="p">,</span> <span class="n">drift_std</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">correction_log</span><span class="p">,</span> <span class="n">pame</span> <span class="o">=</span> <span class="n">import_data</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">folder_path</span><span class="p">,</span> <span class="n">log_file_path</span><span class="p">,</span> <span class="n">isotope</span><span class="p">,</span> <span class="n">standards_df</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">min_area_threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">lin_std</span> <span class="o">=</span> <span class="n">lin_std</span><span class="p">[</span><span class="n">lin_std</span><span class="p">[</span><span class="s2">&quot;area&quot;</span><span class="p">]</span><span class="o">&gt;</span><span class="n">min_area_threshold</span><span class="p">]</span>
+        <span class="n">drift_std</span> <span class="o">=</span> <span class="n">drift_std</span><span class="p">[</span><span class="n">drift_std</span><span class="p">[</span><span class="s2">&quot;area&quot;</span><span class="p">]</span><span class="o">&gt;</span><span class="n">min_area_threshold</span><span class="p">]</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">samples</span><span class="p">[</span><span class="s2">&quot;area&quot;</span><span class="p">]</span><span class="o">&gt;</span><span class="n">min_area_threshold</span><span class="p">]</span>
+    <span class="n">uncorrected_samples</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Run standard plots for area</span>
+    <span class="n">std_plot</span><span class="p">(</span><span class="n">lin_std</span><span class="p">,</span> <span class="n">drift_std</span><span class="p">,</span> <span class="n">folder_path</span><span class="o">=</span><span class="n">folder_path</span><span class="p">,</span> <span class="n">fig_path</span><span class="o">=</span><span class="n">fig_path</span><span class="p">,</span><span class="n">isotope</span><span class="o">=</span><span class="n">isotope</span><span class="p">,</span> <span class="n">dD</span><span class="o">=</span><span class="n">isotope</span><span class="p">)</span>
+
+    <span class="c1"># Drift Correction</span>
+    <span class="n">samples</span><span class="p">,</span> <span class="n">lin_std</span><span class="p">,</span> <span class="n">drift_std</span><span class="p">,</span> <span class="n">dD_temp</span><span class="p">,</span> <span class="n">correction_log</span> <span class="o">=</span> <span class="n">process_drift_correction</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">lin_std</span><span class="p">,</span> <span class="n">drift_std</span><span class="p">,</span> <span class="n">correction_log</span><span class="p">,</span> <span class="n">log_file_path</span><span class="o">=</span><span class="n">log_file_path</span><span class="p">,</span> <span class="n">fig_path</span><span class="o">=</span><span class="n">fig_path</span><span class="p">,</span><span class="n">isotope</span><span class="o">=</span><span class="n">isotope</span><span class="p">)</span>
+
+    <span class="c1"># # Show plots again</span>
+    <span class="c1"># std_plot(lin_std, drift_std, folder_path=folder_path, fig_path=fig_path, dD=dD_temp,isotope=isotope)</span>
+
+    <span class="c1"># Linearity (area) correction</span>
+    <span class="n">drift_std</span><span class="p">,</span> <span class="n">correction_log</span><span class="p">,</span> <span class="n">lin_std</span><span class="p">,</span> <span class="n">samples</span> <span class="o">=</span> <span class="n">process_linearity_correction</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">drift_std</span><span class="p">,</span> <span class="n">lin_std</span><span class="p">,</span> <span class="n">dD_temp</span><span class="p">,</span> <span class="n">correction_log</span><span class="p">,</span>
+                                                                               <span class="n">folder_path</span><span class="p">,</span> <span class="n">fig_path</span><span class="p">,</span> <span class="n">isotope</span><span class="p">,</span> <span class="n">user_linearity_conditions</span><span class="p">,</span>
+                                                                               <span class="n">log_file_path</span><span class="o">=</span><span class="n">log_file_path</span><span class="p">,</span> <span class="n">include_parabolic</span><span class="o">=</span><span class="n">include_parabolic</span><span class="p">)</span>
+
+    <span class="c1"># Reference standard correction</span>
+    <span class="n">samples</span><span class="p">,</span> <span class="n">standards</span> <span class="o">=</span> <span class="n">reference_standard_correction</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">lin_std</span><span class="p">,</span> <span class="n">drift_std</span><span class="p">,</span> <span class="n">correction_log</span><span class="p">,</span> <span class="n">folder_path</span><span class="p">,</span> <span class="n">fig_path</span><span class="p">,</span> <span class="n">log_file_path</span><span class="p">,</span> <span class="n">isotope</span><span class="p">,</span> <span class="n">standards_df</span><span class="p">)</span>
+
+    <span class="c1"># PAME</span>
+    <span class="k">if</span> <span class="n">pame</span><span class="p">:</span>
+        <span class="n">samples</span><span class="p">,</span> <span class="n">pame_unknown</span><span class="p">,</span> <span class="n">pame_derv_meth</span><span class="p">,</span> <span class="n">pame_derv_meth_unc</span>  <span class="o">=</span> <span class="n">calculate_methanol_dD</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">isotope</span><span class="p">,</span> <span class="n">log_file_path</span><span class="p">)</span>
+        <span class="n">samples</span><span class="p">,</span> <span class="n">standards</span> <span class="o">=</span> <span class="n">q_methylation</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">standards</span><span class="p">,</span> <span class="n">isotope</span><span class="p">,</span> <span class="n">log_file_path</span><span class="p">,</span> 
+                                           <span class="n">meth_val</span> <span class="o">=</span> <span class="n">pame_derv_meth</span><span class="p">,</span> <span class="n">meth_std</span> <span class="o">=</span> <span class="n">pame_derv_meth_unc</span><span class="p">);</span> <span class="c1"># methanol values from PAME</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># methylation correction without PAME</span>
+        <span class="n">samples</span><span class="p">,</span> <span class="n">standards</span> <span class="o">=</span> <span class="n">q_methylation</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">standards</span><span class="p">,</span> <span class="n">isotope</span><span class="p">,</span> <span class="n">log_file_path</span><span class="p">);</span>
+
+    <span class="c1"># Remove outliers</span>
+    <span class="n">samples</span><span class="p">,</span> <span class="n">excluded_samples</span> <span class="o">=</span> <span class="n">outlier_removal</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">fig_path</span><span class="p">,</span> <span class="n">log_file_path</span><span class="p">,</span> <span class="n">isotope</span><span class="p">)</span>
+    <span class="n">raw_samples</span> <span class="o">=</span> <span class="n">samples</span>
+    
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;standards&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">standards</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;samples&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">samples</span><span class="p">))</span>
+    <span class="c1"># Calculate mean values of replicate analyses</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">mean_values_with_uncertainty</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">sample_name_header</span><span class="o">=</span><span class="s2">&quot;Identifier 1&quot;</span><span class="p">,</span> <span class="n">chain_header</span><span class="o">=</span><span class="s2">&quot;chain&quot;</span><span class="p">,</span> <span class="n">iso</span><span class="o">=</span><span class="n">isotope</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pame</span><span class="p">:</span>
+        <span class="n">pame_unknown</span> <span class="o">=</span> <span class="n">mean_values_with_uncertainty</span><span class="p">(</span><span class="n">pame_unknown</span><span class="p">,</span> <span class="n">cfg</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">sample_name_header</span><span class="o">=</span><span class="s2">&quot;Identifier 1&quot;</span><span class="p">,</span> <span class="n">chain_header</span><span class="o">=</span><span class="s2">&quot;chain&quot;</span><span class="p">,</span> <span class="n">iso</span><span class="o">=</span><span class="n">isotope</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pame_unknown</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Final Data Correction and Plot</span>
+    <span class="n">output_results</span><span class="p">(</span><span class="n">raw_samples</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">standards</span><span class="p">,</span> <span class="n">pame_unknown</span><span class="p">,</span> <span class="n">folder_path</span><span class="p">,</span> <span class="n">fig_path</span><span class="p">,</span> <span class="n">results_path</span><span class="p">,</span> <span class="n">isotope</span><span class="p">,</span> <span class="n">pame</span><span class="p">,</span> <span class="n">log_file_path</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span></div>
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Dr. Gerard Otiniano and Dr. Elizabeth Thomas.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
