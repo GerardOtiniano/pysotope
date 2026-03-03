@@ -40,7 +40,7 @@ def calculate_methanol_dD(cfg, unknown, isotope, log_file_path):
         sigma_Y = pame_std # Known phthalic uncertainty
         # Propagated methanol correction uncertainty
         sigma_methanol = np.sqrt((10/6)**2 * sigma_X**2 + (4/6)**2 * sigma_Y**2)
-        pame_uk.loc[pame_uk['chain']=="PAME", f'PAME_methanol_{isotope}_error'] = sigma_methanoltd
+        pame_uk.loc[pame_uk['chain']=="PAME", f'PAME_methanol_{isotope}_error'] = sigma_methanol
     elif isotope == "dC":
         X = pame_uk.loc[pame_uk['chain']=="PAME", f'RS_{isotope}']
         Y = phthalic_original
