@@ -1,5 +1,5 @@
 import os
-import datetime 
+import datetime
 from .pick_chain_rt import *
 
 def append_to_log(log_file_path, log_message):
@@ -19,16 +19,16 @@ def neg_response(response):
 
 def query_project_name():
     project_name = input("\nProvide the project name.\n")
-    return project_name 
+    return project_name
 
 def query_file_location():
     while True:
         loc = input("\nProvide the full path of the GC-IRMS datafile (as .csv).\n")
-        
+
         # Remove single quotes if present at both the start and end of the input
         if loc.startswith("'") and loc.endswith("'"):
             loc = loc[1:-1]
-        
+
         if os.path.isfile(loc) and loc.endswith(".csv"):
             return loc
         else:
@@ -63,10 +63,6 @@ def lin_response(log_file_path):
 
 def q_methylation(unknown, stds, isotope, log_file_path, meth_val = -72.5, meth_std = 3.1):
     from .corrections.methanol import methyl_correction
-
-    # -----------------------------
-    # Ask if user wants correction
-    # -----------------------------
     while True:
         apply_response = input(
             f"\nDo you want to apply methanol correction to {isotope}? (Y/N)\n"
@@ -80,26 +76,16 @@ def q_methylation(unknown, stds, isotope, log_file_path, meth_val = -72.5, meth_
             break
         else:
             print("\nInvalid response. Try again.\n")
-
     meth_col = f"Methanol Corrected {isotope}"
 
-    # -----------------------------
-    # If user skips correction
-    # -----------------------------
     if not apply_methanol:
         # Ensure downstream compatibility
         unknown[meth_col] = unknown[isotope]
         append_to_log(log_file_path, f"Methanol correction for {isotope}: NOT applied")
         return unknown, stds
-
-    # -----------------------------
-    # If user applies correction
-    # -----------------------------
     while True:
         response = input(
-            # f"\nMethanol {isotope} is {meth_val.round(2)} ± {meth_std.round(2)} ‰. Is this correct? (Y/N)\n"
-            f"\nMethanol {isotope} is {round(float(meth_val),2)} ± {round(float(meth_std),2)} ‰. Is this correct? (Y/N)\n"
-        ).lower()
+            f"\nMethanol {isotope} is {round(float(meth_val),2)} ± {round(float(meth_std),2)} ‰. Is this correct? (Y/N)\n").lower()
 
         if pos_response(response):
             unknown = methyl_correction(unknown, stds, isotope, log_file_path = log_file_path, mdD = meth_val, mdD_err = meth_std)

@@ -94,7 +94,7 @@ def iso_process(user_linearity_conditions = False, min_area_threshold = None, in
     All variance components are combined using first-order
     Taylor series propagation and reported in the final dataset.
     """
-     
+
     import pandas as pd
     import matplotlib.pyplot as plt
     import numpy as np
@@ -148,7 +148,7 @@ def iso_process(user_linearity_conditions = False, min_area_threshold = None, in
     # PAME
     if pame:
         samples, pame_unknown, pame_derv_meth, pame_derv_meth_unc  = calculate_methanol_dD(cfg, samples, isotope, log_file_path)
-        samples, standards = q_methylation(samples, standards, isotope, log_file_path, 
+        samples, standards = q_methylation(samples, standards, isotope, log_file_path,
                                            meth_val = pame_derv_meth, meth_std = pame_derv_meth_unc); # methanol values from PAME
     else: # methylation correction without PAME
         samples, standards = q_methylation(samples, standards, isotope, log_file_path);
@@ -156,9 +156,7 @@ def iso_process(user_linearity_conditions = False, min_area_threshold = None, in
     # Remove outliers
     samples, excluded_samples = outlier_removal(samples, fig_path, log_file_path, isotope)
     raw_samples = samples
-    
-    print("standards", list(standards))
-    print("samples", list(samples))
+
     # Calculate mean values of replicate analyses
     samples = mean_values_with_uncertainty(samples, cfg, sample_name_header="Identifier 1", chain_header="chain", iso=isotope)
     if pame:
