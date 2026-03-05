@@ -92,25 +92,28 @@ def append_to_log(log_file_path, log_message):
     with open(log_file_path, 'a', encoding='utf-8', errors='replace') as log_file:
         print(f" {log_message}", file=log_file)
 
+def chain_subsetrer(std_df, std_meta, std_type):
+        chains = list(std_meta[std_meta['type'] == std_type]['chain length'])
+        IDs = list(std_meta[std_meta['type'] == std_type]['ID'])
+        # Primary mask (Identifier 1)
+        mask1 = id_mask(std_df, IDs, col="Identifier 1", mode="any")
+        df = std_df[mask1]
+        # Optional secondary mask (Identifier 2)
+        if "Identifier 2" in df.columns and df["Identifier 2"].notna().any():
+            mask2 = df["Identifier 2"].astype(str).str.lower() == "standard"
+            df = df[mask2]
+        if len(chains) > 0:
+            df = df[df.chain.isin(chains)]
+        return df, chains, IDs
+
 # def chain_subsetrer(std_df, std_meta, std_type):
 #     chains = list(std_meta[std_meta['type'] == std_type]['chain length'])
-#     IDs    = list(std_meta[std_meta['type'] == std_type]['ID'])
+#     IDs = list(std_meta[std_meta['type'] == std_type]['ID'])
 #     mask = id_mask(std_df, IDs, col="Identifier 1", mode="any")
-#     if std_type in ["linearity", "drift"] and "Identifier 2" in std_df.columns:
-#         mask = mask & (std_df["Identifier 2"] == "STANDARD")
 #     df = std_df[mask]
 #     if len(chains) > 0:
 #         df = df[df.chain.isin(chains)]
 #     return df, chains, IDs
-
-def chain_subsetrer(std_df, std_meta, std_type):
-    chains = list(std_meta[std_meta['type'] == std_type]['chain length'])
-    IDs = list(std_meta[std_meta['type'] == std_type]['ID'])
-    mask = id_mask(std_df, IDs, col="Identifier 1", mode="any")
-    df = std_df[mask]
-    if len(chains) > 0:
-        df = df[df.chain.isin(chains)]
-    return df, chains, IDs
 
 def import_data(data_location, folder_path, log_file_path, isotope, standards_df):
     """
@@ -162,7 +165,7 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     append_to_log(log_file_path, f"Number of linearity standards analyzed: {len(linearity_std)}")
     drift_std, drift_chain_lengths, drift_ids = chain_subsetrer(df, standards_df, "drift")
     append_to_log(log_file_path, f"Number of Drift standards analyzed: {len(drift_std)}")
-    
+
     # Remove first two drift runs
     drift_std = drift_std.sort_values('date-time_true')
     unique_time_signatures = drift_std["date-time"].unique() # identify unique drift runs
