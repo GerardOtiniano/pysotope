@@ -126,8 +126,6 @@ def iso_process(user_linearity_conditions=False, min_area_threshold=None, includ
 
     # Import data
     lin_std, drift_std, samples, correction_log, pame = import_data(loc, folder_path, log_file_path, isotope, standards_df)
-    print(lin_std)
-    print(drift_std)
     if min_area_threshold is not None:
         lin_std = lin_std[lin_std["area"]>min_area_threshold]
         drift_std = drift_std[drift_std["area"]>min_area_threshold]
