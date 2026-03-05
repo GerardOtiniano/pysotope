@@ -8,7 +8,6 @@ def linear_func(x, m, b):
     return m*x + b
 
 def exp_decay(x, a, b, c):
-    # a·exp(−b·x) + c  → decays from (a+c) to c as x↑
     return a * np.exp(-b * x) + c
 
 def exp_growth(x, a, b, c):
@@ -61,9 +60,68 @@ def guess_parabolic_params(x, y):
     a, b, c = np.polyfit(x, y, 2)
     return (a, b, c)
 
+def is_degenerate(model, popt, x):
+    if not np.all(np.isfinite(popt)):
+        return True
+    if model in ("decay", "growth"):
+        a, b, c = popt
+        if abs(a) > 1e4:
+            return True
+        if b > 5:
+            return True
+        y_pred = exp_decay(x, *popt) if model == "decay" else exp_growth(x, *popt)
+        if np.max(np.abs(y_pred)) > 100:
+            return True
+    if model == "parabolic":
+        a, b, c = popt
+        if abs(a) > 10:
+            return True
+    return False
+# def fit_and_select_best(x, y, include_parabolic):
+#     x = np.asarray(x, float); y = np.asarray(y, float)
+#     order = np.argsort(x)          # sort by area
+#     x = x[order]; y = y[order]
+#
+#     p0_lin = guess_linear_params(x, y)
+#     popt_lin, pcov_lin = curve_fit(linear_func, x, y, p0=p0_lin, maxfev=2_000_000)
+#     sse_lin = np.sum((y - linear_func(x, *popt_lin))**2)
+#
+#     p0_dec = guess_decay_params(x, y)
+#     popt_dec, pcov_dec = curve_fit(
+#         exp_decay, x, y, p0=p0_dec,
+#         bounds=([0, 0, -np.inf], [np.inf, np.inf, np.inf]),
+#         maxfev=2_000_000)
+#     sse_dec = np.sum((y - exp_decay(x, *popt_dec))**2)
+#
+#     p0_gro = guess_growth_params(x, y)
+#     popt_gro, pcov_gro = curve_fit(
+#         exp_growth, x, y, p0=p0_gro,
+#         bounds=([0, 0, -np.inf], [np.inf, np.inf, np.inf]),
+#         maxfev=2_000_000)
+#     sse_gro = np.sum((y - exp_growth(x, *popt_gro))**2)
+#
+#     sse_list   = [sse_lin, sse_dec, sse_gro]
+#     model_list = ["linear", "decay", "growth"]
+#     popt_list  = [popt_lin, popt_dec, popt_gro]
+#     pcov_list  = [pcov_lin, pcov_dec, pcov_gro]
+#
+#     if include_parabolic:
+#         p0_par = guess_parabolic_params(x, y)
+#         popt_par, pcov_par = curve_fit(
+#             parabolic_func, x, y, p0=p0_par, maxfev=2_000_000)
+#         sse_par = np.sum((y - parabolic_func(x, *popt_par))**2)
+#
+#         sse_list   = [sse_lin, sse_dec, sse_gro, sse_par,]
+#         model_list = ["linear", "decay", "growth", "parabolic"]
+#         popt_list  = [popt_lin, popt_dec, popt_gro, popt_par,]
+#         pcov_list  = [pcov_lin, pcov_dec, pcov_gro, pcov_par,]
+#
+#
+#     idx = int(np.argmin(sse_list))
+#     return model_list[idx], popt_list[idx], sse_list[idx], pcov_list[idx]
 def fit_and_select_best(x, y, include_parabolic):
     x = np.asarray(x, float); y = np.asarray(y, float)
-    order = np.argsort(x)          # sort by area
+    order = np.argsort(x)
     x = x[order]; y = y[order]
 
     p0_lin = guess_linear_params(x, y)
@@ -83,26 +141,32 @@ def fit_and_select_best(x, y, include_parabolic):
         bounds=([0, 0, -np.inf], [np.inf, np.inf, np.inf]),
         maxfev=2_000_000)
     sse_gro = np.sum((y - exp_growth(x, *popt_gro))**2)
-    
-    sse_list   = [sse_lin, sse_dec, sse_gro]
-    model_list = ["linear", "decay", "growth"]
-    popt_list  = [popt_lin, popt_dec, popt_gro]
-    pcov_list  = [pcov_lin, pcov_dec, pcov_gro]
-    
+
+    models = [
+        ("linear", popt_lin, pcov_lin, sse_lin),
+        ("decay", popt_dec, pcov_dec, sse_dec),
+        ("growth", popt_gro, pcov_gro, sse_gro),
+    ]
+
     if include_parabolic:
         p0_par = guess_parabolic_params(x, y)
         popt_par, pcov_par = curve_fit(
             parabolic_func, x, y, p0=p0_par, maxfev=2_000_000)
         sse_par = np.sum((y - parabolic_func(x, *popt_par))**2)
 
-        sse_list   = [sse_lin, sse_dec, sse_gro, sse_par,]
-        model_list = ["linear", "decay", "growth", "parabolic"]
-        popt_list  = [popt_lin, popt_dec, popt_gro, popt_par,]
-        pcov_list  = [pcov_lin, pcov_dec, pcov_gro, pcov_par,]
-    
+        models.append(("parabolic", popt_par, pcov_par, sse_par))
 
-    idx = int(np.argmin(sse_list))
-    return model_list[idx], popt_list[idx], sse_list[idx], pcov_list[idx]
+    # sort models by SSE
+    models_sorted = sorted(models, key=lambda m: m[3])
+
+    # choose first non-degenerate model
+    for model, popt, pcov, sse in models_sorted:
+        if not is_degenerate(model, popt, x):
+            return model, popt, sse, pcov
+
+    # fallback (all degenerate)
+    model, popt, pcov, sse = models_sorted[0]
+    return model, popt, sse, pcov
 
 def fit_linear_model(x,y):
     p0_lin = guess_linear_params(x, y)
@@ -233,12 +297,44 @@ def fit_with_odr(x, y, sx=None, sy=None, model="linear", beta0=None, maxit=2000)
         "stopreason": out.stopreason,
         "success": out.info in (1, 2, 3),}
 
+# def fit_and_select_best_eiv(x, y, sx=None, sy=None, include_parabolic=False):
+#     """
+#     ODR-based model selection. Returns (best_model, popt, pcov, details)
+#     Uses AIC-like score based on orthogonal SSE.
+#     """
+#     fits = {}
+#     if include_parabolic:
+#         models_to_test = ("linear", "decay", "growth", "parabolic")
+#     else:
+#         models_to_test = ("linear", "decay", "growth")
+#     for name in models_to_test:
+#         try:
+#             res = fit_with_odr(x, y, sx=sx, sy=sy, model=name)
+#             n = len(x)
+#             k = res["k"]
+#             sse = res["sse_ortho"]
+#             # AIC-like score (constants cancel in comparisons)
+#             score = n * np.log(sse / max(n, 1) + 1e-12) + 2 * k
+#             fits[name] = (res, score)
+#         except Exception:
+#             continue
+#
+#     if not fits:
+#         raise RuntimeError("ODR fits failed for all models.")
+#
+#     best = min(fits.items(), key=lambda kv: kv[1][1])[0]
+#     res = fits[best][0]
+#     return best, np.asarray(res["beta"]), np.asarray(res["cov_beta"]), res
+
 def fit_and_select_best_eiv(x, y, sx=None, sy=None, include_parabolic=False):
     """
     ODR-based model selection. Returns (best_model, popt, pcov, details)
     Uses AIC-like score based on orthogonal SSE.
+    Degenerate models are skipped.
     """
+
     fits = {}
+
     if include_parabolic:
         models_to_test = ("linear", "decay", "growth", "parabolic")
     else:
@@ -246,21 +342,34 @@ def fit_and_select_best_eiv(x, y, sx=None, sy=None, include_parabolic=False):
     for name in models_to_test:
         try:
             res = fit_with_odr(x, y, sx=sx, sy=sy, model=name)
+
             n = len(x)
             k = res["k"]
             sse = res["sse_ortho"]
-            # AIC-like score (constants cancel in comparisons)
+
             score = n * np.log(sse / max(n, 1) + 1e-12) + 2 * k
+
             fits[name] = (res, score)
+
         except Exception:
             continue
 
     if not fits:
         raise RuntimeError("ODR fits failed for all models.")
 
-    best = min(fits.items(), key=lambda kv: kv[1][1])[0]
-    res = fits[best][0]
-    return best, np.asarray(res["beta"]), np.asarray(res["cov_beta"]), res
+    # sort models by score
+    sorted_models = sorted(fits.items(), key=lambda kv: kv[1][1])
+
+    # choose first non-degenerate model
+    for name, (res, score) in sorted_models:
+        popt = np.asarray(res["beta"])
+
+        if not is_degenerate(name, popt, x):
+            return name, popt, np.asarray(res["cov_beta"]), res
+
+    # fallback: all degenerate
+    name, (res, score) = sorted_models[0]
+    return name, np.asarray(res["beta"]), np.asarray(res["cov_beta"]), res
 
 def prediction_std_eiv(model_name, x, popt, pcov, sx=None, nsigma=1):
     """
