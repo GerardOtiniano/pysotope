@@ -14,7 +14,7 @@ from .utils.base_functions import *
 from .utils.config import CorrectionConfig
 from .utils.corrections.pame import *
 
-def iso_process(user_linearity_conditions = False, min_area_threshold = None, include_parabolic=False):
+def iso_process(user_linearity_conditions=False, min_area_threshold=None, include_parabolic=False, force_linearity_model=None):
     """
     Main processing pipeline for GC-IRMS isotope data.
 
@@ -49,6 +49,10 @@ def iso_process(user_linearity_conditions = False, min_area_threshold = None, in
     include_parabolic : bool, default=False
         If True, includes a second-order (parabolic) term in the
         linearity correction model. If False, a linear model is used.
+
+    force_linearity_model : str, default = None,
+        Used to force the type of model used for linearity correction.
+        Can be "linear", "decay", "growth", or "parabolic".
 
     Outputs
     -------
@@ -138,9 +142,8 @@ def iso_process(user_linearity_conditions = False, min_area_threshold = None, in
     # std_plot(lin_std, drift_std, folder_path=folder_path, fig_path=fig_path, dD=dD_temp,isotope=isotope)
 
     # Linearity (area) correction
-    drift_std, correction_log, lin_std, samples = process_linearity_correction(cfg, samples, drift_std, lin_std, dD_temp, correction_log,
-                                                                               folder_path, fig_path, isotope, user_linearity_conditions,
-                                                                               log_file_path=log_file_path, include_parabolic=include_parabolic)
+    drift_std, correction_log, lin_std, samples = process_linearity_correction(cfg, samples,
+        drift_std, lin_std, dD_temp, correction_log, folder_path, fig_path, isotope, user_linearity_conditions, log_file_path=log_file_path, include_parabolic=include_parabolic,force_linearity_model=force_linearity_model)
 
     # Reference standard correction
     samples, standards = reference_standard_correction(cfg, samples, lin_std, drift_std, correction_log, folder_path, fig_path, log_file_path, isotope, standards_df)

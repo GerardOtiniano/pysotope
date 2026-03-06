@@ -115,107 +115,268 @@ def std_plot(lin, drift, folder_path, fig_path, isotope, cutoff_line=None, regre
     plt.savefig(os.path.join(fig_path, "Standards Raw.png"), dpi=300, bbox_inches="tight")
     plt.show()
 
-def verify_lin_plot(lin, samples, fig_path, dD_id, log_file_path,cutoff_line, isotope, regress=False, include_parabolic=False):
+# def verify_lin_plot(lin, samples, fig_path, dD_id, log_file_path,cutoff_line, isotope, regress=False, include_parabolic=False):
+#     """
+#     Function to plot linearity standards with color differentiation based on cutoff,
+#     but split into one subplot per unique 'chain' in the `samples` DataFrame.
+#     ~GAO~12/4/2023 (modified)
+#     """
+#     # Ensure cutoff_line is a float
+#     cutoff_line = float(cutoff_line)
+#
+#     # Find all unique chains in samples
+#     chains = samples["chain"].unique()
+#     n_chains = len(chains)
+#     if n_chains == 0:
+#         raise ValueError("`samples.chain.unique()` returned no chains. Nothing to plot.")
+#
+#     # Create a figure with n_chains subplots, in a single column
+#     fig, axes = plt.subplots(n_chains, 1, figsize=(5, 3 * n_chains), sharex=False)
+#     # If there's only one chain, axes won't be an array; force it into an array
+#     if n_chains == 1:
+#         axes = np.array([axes])
+#
+#     # Precompute all points above/below cutoff (these are the same for every chain)
+#     above_cutoff = lin[lin["area"] >= cutoff_line]
+#     below_cutoff = lin[lin["area"] <  cutoff_line]
+#
+#     # Fit model once (on the "above_cutoff" points); we'll re‐plot the same best‐fit curve in each subplot
+#     xdata = above_cutoff["area"].values
+#     ydata = above_cutoff[dD_id].values
+#     best_model, popt, sse, pcov = fit_and_select_best(xdata, ydata, include_parabolic)
+#     x_fit = np.linspace(xdata.min(), xdata.max(), 200)
+#
+#     if best_model == "linear":
+#         y_fit = linear_func(x_fit, *popt)
+#         model_label = "Linear Fit"
+#         parameter_text = f"y = {popt[0]:.3g} x + {popt[1]:.3g}"
+#     elif best_model == "decay":
+#         y_fit = exp_decay(x_fit, *popt)
+#         model_label = "Exponential Decay"
+#         parameter_text = f"y = {popt[0]:.3g} e^(−{popt[1]:.3g} x + {popt[2]:.3g})"
+#     elif best_model == "growth":
+#         y_fit = exp_growth(x_fit, *popt)
+#         model_label = "Exponential Growth"
+#         parameter_text = f"y = {popt[0]:.3g} (1 − e^(−{popt[1]:.3g} x) + {popt[2]:.3g})"
+#     elif best_model == "parabolic":
+#         y_fit = parabolic_func(x_fit, *popt)
+#         model_label = "Parabolic"
+#         parameter_text = f"y = {popt[0]:.6g} · x^2 + {popt[1]:.6g} · x + {popt[2]:.6g}"
+#     else:
+#         raise RuntimeError("No model converged in fit_and_select_best().")
+#
+#     # Compute R²
+#     tss = np.sum((ydata - ydata.mean()) ** 2)
+#     r_squared = 1.0 if tss == 0 else 1.0 - (sse / tss)
+#
+#     # Now loop over each chain, make a subplot
+#     for idx, chain in enumerate(chains):
+#         ax = axes[idx]
+#
+#         # 1) Scatter points: above cutoff (orange) and below cutoff (grey)
+#         ax.scatter(above_cutoff["area"], above_cutoff[dD_id],  alpha=0.4,  ec="k", s=80, c="orange", label="Above peak area threshold")
+#         ax.scatter(below_cutoff["area"], below_cutoff[dD_id], alpha=0.4, ec="k", s=80, c="grey",label="Below peak area threshold")
+#         # Vertical cutoff line
+#         ax.axvline(cutoff_line, color="red", linestyle="--")
+#
+#         # 2) Vertical lines for this specific chain
+#         subset = samples[samples["chain"] == chain]
+#         for i, row in subset.iterrows():
+#             ax.axvline(row["area"], color="k", alpha=0.3, zorder=0,label="Samples" if i == subset.index[0] else None)
+#
+#         # 3) Plot the best-fit curve (same for all subplots)
+#         ax.plot(x_fit, y_fit, "red", label=model_label)
+#         ax.text(0.01,1.1, str(chain), transform=ax.transAxes, ha='left', va='top', fontsize=10)
+#
+#         # 5) Axis labels (only bottom‐most subplot gets the X label; all get a Y label)
+#         if isotope == "dD":
+#             y_label = "Normalized dD (‰)"
+#         else:
+#             y_label = "Normalized dC (‰)"
+#         ax.set_ylabel(y_label)
+#
+#         if idx == n_chains - 1:
+#             ax.set_xlabel("Peak Area (mVs)")
+#
+#         # 6) Minor formatting
+#         ax.legend(
+#             loc="upper center",
+#             bbox_to_anchor=(0.5, -0.2),
+#             frameon=False,
+#             fancybox=False,
+#             shadow=False,
+#             ncol=2
+#         )
+#         ax.grid(alpha=0)
+#
+#     # Adjust layout and save
+#     plt.tight_layout()
+#     out_fname = os.path.join(fig_path, "Linearity_by_chain.png")
+#     plt.savefig(out_fname, bbox_inches="tight", dpi=300)
+#     plt.show()
+#
+#     # Finally, print fit diagnostics once
+#     print(f"Chosen Model: {model_label}")
+#     print(f"Parameters: {parameter_text}")
+#     print(f"R² = {r_squared:.3f} | SSE = {sse:.3f}")
+def verify_lin_plot(
+    lin,
+    samples,
+    fig_path,
+    dD_id,
+    log_file_path,
+    cutoff_line,
+    isotope,
+    best_model,
+    popt,
+    sse,
+):
     """
-    Function to plot linearity standards with color differentiation based on cutoff,
-    but split into one subplot per unique 'chain' in the `samples` DataFrame.
-    ~GAO~12/4/2023 (modified)
+    Plot linearity standards using a PRE-DETERMINED model.
+    No fitting is performed here — the model is supplied externally.
     """
-    # Ensure cutoff_line is a float
+
     cutoff_line = float(cutoff_line)
 
-    # Find all unique chains in samples
     chains = samples["chain"].unique()
     n_chains = len(chains)
+
     if n_chains == 0:
         raise ValueError("`samples.chain.unique()` returned no chains. Nothing to plot.")
 
-    # Create a figure with n_chains subplots, in a single column
     fig, axes = plt.subplots(n_chains, 1, figsize=(5, 3 * n_chains), sharex=False)
-    # If there's only one chain, axes won't be an array; force it into an array
+
     if n_chains == 1:
         axes = np.array([axes])
 
-    # Precompute all points above/below cutoff (these are the same for every chain)
     above_cutoff = lin[lin["area"] >= cutoff_line]
-    below_cutoff = lin[lin["area"] <  cutoff_line]
+    below_cutoff = lin[lin["area"] < cutoff_line]
 
-    # Fit model once (on the "above_cutoff" points); we'll re‐plot the same best‐fit curve in each subplot
     xdata = above_cutoff["area"].values
     ydata = above_cutoff[dD_id].values
-    best_model, popt, sse, pcov = fit_and_select_best(xdata, ydata, include_parabolic)
+
     x_fit = np.linspace(xdata.min(), xdata.max(), 200)
+
+    # -------------------------------------------------
+    # USE PROVIDED MODEL (NO FITTING)
+    # -------------------------------------------------
 
     if best_model == "linear":
         y_fit = linear_func(x_fit, *popt)
+        y_pred = linear_func(xdata, *popt)
         model_label = "Linear Fit"
         parameter_text = f"y = {popt[0]:.3g} x + {popt[1]:.3g}"
+
     elif best_model == "decay":
         y_fit = exp_decay(x_fit, *popt)
+        y_pred = exp_decay(xdata, *popt)
         model_label = "Exponential Decay"
-        parameter_text = f"y = {popt[0]:.3g} e^(−{popt[1]:.3g} x + {popt[2]:.3g})"
+        parameter_text = f"y = {popt[0]:.3g} * exp(-{popt[1]:.3g} x) + {popt[2]:.3g}"
+
     elif best_model == "growth":
         y_fit = exp_growth(x_fit, *popt)
+        y_pred = exp_growth(xdata, *popt)
         model_label = "Exponential Growth"
-        parameter_text = f"y = {popt[0]:.3g} (1 − e^(−{popt[1]:.3g} x) + {popt[2]:.3g})"
+        parameter_text = f"y = {popt[0]:.3g} * (1 - exp(-{popt[1]:.3g} x)) + {popt[2]:.3g}"
+
     elif best_model == "parabolic":
         y_fit = parabolic_func(x_fit, *popt)
+        y_pred = parabolic_func(xdata, *popt)
         model_label = "Parabolic"
-        parameter_text = f"y = {popt[0]:.6g} · x^2 + {popt[1]:.6g} · x + {popt[2]:.6g}"
-    else:
-        raise RuntimeError("No model converged in fit_and_select_best().")
+        parameter_text = f"y = {popt[0]:.6g} x² + {popt[1]:.6g} x + {popt[2]:.6g}"
 
-    # Compute R²
+    else:
+        raise RuntimeError(f"Unknown model type: {best_model}")
+
+    # -------------------------------------------------
+    # R² calculation
+    # -------------------------------------------------
+
     tss = np.sum((ydata - ydata.mean()) ** 2)
     r_squared = 1.0 if tss == 0 else 1.0 - (sse / tss)
 
-    # Now loop over each chain, make a subplot
+    # -------------------------------------------------
+    # Plotting
+    # -------------------------------------------------
+
     for idx, chain in enumerate(chains):
+
         ax = axes[idx]
 
-        # 1) Scatter points: above cutoff (orange) and below cutoff (grey)
-        ax.scatter(above_cutoff["area"], above_cutoff[dD_id],  alpha=0.4,  ec="k", s=80, c="orange", label="Above peak area threshold")
-        ax.scatter(below_cutoff["area"], below_cutoff[dD_id], alpha=0.4, ec="k", s=80, c="grey",label="Below peak area threshold")
-        # Vertical cutoff line
+        ax.scatter(
+            above_cutoff["area"],
+            above_cutoff[dD_id],
+            alpha=0.4,
+            ec="k",
+            s=80,
+            c="orange",
+            label="Above peak area threshold",
+        )
+
+        ax.scatter(
+            below_cutoff["area"],
+            below_cutoff[dD_id],
+            alpha=0.4,
+            ec="k",
+            s=80,
+            c="grey",
+            label="Below peak area threshold",
+        )
+
         ax.axvline(cutoff_line, color="red", linestyle="--")
 
-        # 2) Vertical lines for this specific chain
         subset = samples[samples["chain"] == chain]
+
         for i, row in subset.iterrows():
-            ax.axvline(row["area"], color="k", alpha=0.3, zorder=0,label="Samples" if i == subset.index[0] else None)
+            ax.axvline(
+                row["area"],
+                color="k",
+                alpha=0.3,
+                zorder=0,
+                label="Samples" if i == subset.index[0] else None,
+            )
 
-        # 3) Plot the best-fit curve (same for all subplots)
         ax.plot(x_fit, y_fit, "red", label=model_label)
-        ax.text(0.01,1.1, str(chain), transform=ax.transAxes, ha='left', va='top', fontsize=10)
 
-        # 5) Axis labels (only bottom‐most subplot gets the X label; all get a Y label)
+        ax.text(
+            0.01,
+            1.1,
+            str(chain),
+            transform=ax.transAxes,
+            ha="left",
+            va="top",
+            fontsize=10,
+        )
+
         if isotope == "dD":
             y_label = "Normalized dD (‰)"
         else:
             y_label = "Normalized dC (‰)"
+
         ax.set_ylabel(y_label)
 
         if idx == n_chains - 1:
             ax.set_xlabel("Peak Area (mVs)")
 
-        # 6) Minor formatting
         ax.legend(
             loc="upper center",
             bbox_to_anchor=(0.5, -0.2),
             frameon=False,
             fancybox=False,
             shadow=False,
-            ncol=2
+            ncol=2,
         )
+
         ax.grid(alpha=0)
 
-    # Adjust layout and save
     plt.tight_layout()
+
     out_fname = os.path.join(fig_path, "Linearity_by_chain.png")
+
     plt.savefig(out_fname, bbox_inches="tight", dpi=300)
+
     plt.show()
 
-    # Finally, print fit diagnostics once
     print(f"Chosen Model: {model_label}")
     print(f"Parameters: {parameter_text}")
     print(f"R² = {r_squared:.3f} | SSE = {sse:.3f}")
