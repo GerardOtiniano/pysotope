@@ -377,6 +377,8 @@ def process_linearity_correction(
         print("\nSkipping linearity correction.\n")
         clear_output(wait=True)
         return drift, correction_log, lin_std, samp
+    else:
+        cfg.linearity_applied = True
 
     lin_std, drift, samp, excluded_drift, excluded_lin_std, excluded_samp = (
         linearity_correction(
@@ -465,6 +467,19 @@ def linearity_correction(
         lin_reference,
         dD_id,
         isotope)
+    
+    # print(list(filtered_lin_std))
+    # fig = plt.figure()
+    # plt.scatter(filtered_lin_std['area'], filtered_lin_std['linearity_corrected_dD'])
+    # plt.show()
+    # for i in filtered_lin_std['chain'].unique():
+    #     fig = plt.figure()
+    #     temp = filtered_lin_std[filtered_lin_std['chain']==i]
+    #     plt.scatter(temp['area'], temp['dD'], c='k')
+    #     plt.scatter(temp['area'], temp['linearity_corrected_dD'], c='red')
+        
+    #     plt.show()
+    
     return (
         filtered_lin_std,
         filtered_drift,
