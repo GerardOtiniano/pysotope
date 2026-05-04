@@ -88,7 +88,7 @@ def create_subfolder(folder_path, name):
 def load_standards(isotope: str = 'dD') -> pd.DataFrame:
     from ..standards_manager.editor import get_standard_path, standard_editor
 
-    path = get_standard_path(f'RS_{isotope}.csv')
+    path = get_standard_path(f'gcirms_RS_{isotope}.csv')
     if not path.exists():
         print("Didn't find standards")
         return standard_editor()
