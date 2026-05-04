@@ -47,7 +47,7 @@ def create_log_file(folder_path):
     os.makedirs(folder_path, exist_ok=True)
     log_file_path = os.path.join(folder_path, 'Log file.txt')
     with open(log_file_path, 'w') as log_file:
-        current_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        current_datetime = dt.now().strftime('%Y-%m-%d %H:%M:%S')
         initial_message = 'Log file created at ' + str(current_datetime) + '\n'
         log_file.write(initial_message)
         log_file.write(f'Python version: {platform.python_version()}\n')

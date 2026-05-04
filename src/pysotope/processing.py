@@ -107,7 +107,7 @@ def iso_process(user_linearity_conditions=False, min_area_threshold=None, includ
     from IPython.display import clear_output
     from scipy.stats import linregress
     from matplotlib.dates import date2num
-    from datetime import datetime, timedelta
+    from datetime import timedelta
     import time
     from scipy.stats import zscore
     from sklearn.linear_model import HuberRegressor
