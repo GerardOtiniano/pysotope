@@ -122,7 +122,7 @@ def iso_process(user_linearity_conditions=False, min_area_threshold=None, includ
 
     # Set standards
     standards_df = load_standards(isotope)#query_stds(alt_stds, isotope)
-    append_to_log(log_file_path, standards_df)
+    append_to_log(log_file_path, standards_df.to_string())
 
     # Import data
     lin_std, drift_std, samples, correction_log, pame = import_data(loc, folder_path, log_file_path, isotope, standards_df)
