@@ -3,7 +3,7 @@ import pandas as pd
 
 from . .base_functions import append_to_log
 from .VPDB_correction import get_isotope as VPDB_get_isotope
-from .ea_drift_correction import get_isotope as drift_get_isotope
+from ...corrections.drift_correction import get_isotope as drift_get_isotope
 
 def uncertainty_calculation(df, cfg, log_file):
     """
@@ -58,12 +58,21 @@ def combine_errors(df, cfg, log_file, tag):
     - Logs the statistical summary of uncertainty calculation and corrections to the log file.
     """
 
-    vpdb_input_col, vpdb_col, actual_col, iso_label, el = VPDB_get_isotope(tag, cfg)
+    vpdb_input_col, input_desc, vpdb_col, actual_col, iso_label, el = VPDB_get_isotope(tag, cfg)
     drift_input_col, iso_label, el, comp = drift_get_isotope(tag)
     error_terms = [df[f"{vpdb_col}_se"]]  # Always include VSMOW_error
 
-    if vpdb_input_col.endswith("_corr"):
-        error_terms.append(df[f"{drift_input_col}_se"])
+    if tag.upper() == "N":
+        if cfg.drift_N_applied:
+            error_terms.append(df[f"{drift_input_col}_se"])
+        if cfg.linearity_N_applied:
+            error_terms.append(df["d 15N/14N_lin_se"])
+    elif tag.upper() == "C":
+        if cfg.drift_C_applied:
+            error_terms.append(df[f"{drift_input_col}_se"])
+        if cfg.linearity_C_applied:
+            error_terms.append(df["d 13C/12C_lin_se"])
+
     # Combine using root sum of squares
     squared = [err ** 2 for err in error_terms]
     df['sum_squared_error'] = np.sqrt(sum(squared))

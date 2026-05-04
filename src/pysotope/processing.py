@@ -1,7 +1,7 @@
 # src/OSIBL_correction
 import os
 
-from .utils.corrections.drift import *
+from .corrections.drift_correction import apply_drift_model, build_drift_model, plot_drift_diagnostics, q_drift
 from .utils.corrections.linearity import *
 from .utils.corrections.methanol import *
 from .utils.corrections.vsmow import *
@@ -136,7 +136,81 @@ def iso_process(user_linearity_conditions=False, min_area_threshold=None, includ
     std_plot(lin_std, drift_std, folder_path=folder_path, fig_path=fig_path,isotope=isotope, dD=isotope)
 
     # Drift Correction
-    samples, lin_std, drift_std, dD_temp, correction_log = process_drift_correction(cfg, samples, lin_std, drift_std, correction_log, log_file_path=log_file_path, fig_path=fig_path,isotope=isotope)
+    append_to_log(log_file_path, "Drift Correction")
+    choice = q_drift(log_file_path).strip().lower()
+    if choice in ("n", "no", "false", "f"):
+        cfg.drift_applied = False
+        for df in (samples, lin_std, drift_std):
+            df[f"drift_corrected_{isotope}"] = df.get(isotope, np.nan)
+        dD_temp = isotope
+    else:
+        drift_model = build_drift_model(
+            drift_std,
+            target_column=isotope,
+            index_column="time_rel",
+            weight_column="area",
+            group_column="chain",
+            log_file_path=log_file_path,
+        )
+        plot_drift_diagnostics(
+            drift_model,
+            fig_path=fig_path,
+            figure_name="Drift.png",
+            y_label=f"Centered {isotope} (‰)",
+            x_label="Time",
+        )
+        print(f"\nWeighted-LS model: {isotope} = {drift_model['slope']:.3f}·t_ctr + {drift_model['intercept']:.3f}")
+        print(f"Adj R² = {drift_model['r_squared']:.3f} | p = {drift_model['p_value']:.3g} | SE = {drift_model['std_error']:.3f}")
+        if pos_response(input("Apply the correction? (Y/N): ")):
+            cfg.drift_applied = True
+            drift_std = apply_drift_model(
+                drift_std,
+                drift_model,
+                target_column=isotope,
+                index_column="time_rel",
+                output_column=f"drift_corrected_{isotope}",
+                error_column="drift_error",
+                log_file_path=log_file_path,
+                label="drift_std",
+            )
+            lin_std = apply_drift_model(
+                lin_std,
+                drift_model,
+                target_column=isotope,
+                index_column="time_rel",
+                output_column=f"drift_corrected_{isotope}",
+                error_column="drift_error",
+                log_file_path=log_file_path,
+                label="lin_std",
+            )
+            samples = apply_drift_model(
+                samples,
+                drift_model,
+                target_column=isotope,
+                index_column="time_rel",
+                output_column=f"drift_corrected_{isotope}",
+                error_column="drift_error",
+                log_file_path=log_file_path,
+                label="samples",
+            )
+            correction_log.loc["Drift", "samples"] = 1
+            append_to_log(log_file_path, "- User accepted drift correction.")
+            append_to_log(
+                log_file_path,
+                f"- Weighted-LS model: {isotope} = {drift_model['slope']:.3f} t_ctr + {drift_model['intercept']:.3f}",
+            )
+            append_to_log(
+                log_file_path,
+                f"- Weighted-LS model stats: Adj R² = {drift_model['r_squared']:.3f} | p = {drift_model['p_value']:.3g} | SE = {drift_model['std_error']:.3f}",
+            )
+            dD_temp = f"drift_corrected_{isotope}"
+        else:
+            cfg.drift_applied = False
+            print("[INFO] Drift correction NOT applied - data reverted.")
+            for df in (samples, lin_std, drift_std):
+                df[f"drift_corrected_{isotope}"] = df.get(isotope, np.nan)
+            append_to_log(log_file_path, "- User rejected drift correction. No changes saved.")
+            dD_temp = isotope
 
     # # Show plots again
     # std_plot(lin_std, drift_std, folder_path=folder_path, fig_path=fig_path, dD=dD_temp,isotope=isotope)
@@ -168,5 +242,4 @@ def iso_process(user_linearity_conditions=False, min_area_threshold=None, includ
         pame_unknown = None
     # Final Data Correction and Plot
     output_results(raw_samples, samples, standards, pame_unknown, folder_path, fig_path, results_path, isotope, pame, log_file_path, cfg)
-
 

@@ -30,6 +30,8 @@ class CorrectionConfig:
 
     drift_C_applied: bool = False
     drift_N_applied: bool = False
+    linearity_C_applied: bool = False
+    linearity_N_applied: bool = False
 
     @property
     def dN_col(self) -> str:
@@ -43,9 +45,11 @@ class CorrectionConfig:
             "d 15N/14N_corr" if Nitrogen drift correction applied; otherwise "d 15N/14N".
         """
 
+        if self.linearity_N_applied:
+            return "d 15N/14N_lin_corr","Linearity corrected"
         if self.drift_N_applied:
-            return "d 15N/14N_corr"
-        return "d 15N/14N"
+            return "d 15N/14N_corr", "Drift corrected"
+        return "d 15N/14N", "Raw"
 
     @property
     def dC_col(self) -> str:
@@ -59,6 +63,8 @@ class CorrectionConfig:
             "d 13C/12C_corr" if Carbon drift correction applied; otherwise "d 13C/12C".
         """
 
+        if self.linearity_C_applied:
+            return "d 13C/12C_lin_corr","Linearity corrected"
         if self.drift_C_applied:
-            return "d 13C/12C_corr"
-        return "d 13C/12C"
+            return "d 13C/12C_corr", "Drift corrected"
+        return "d 13C/12C", "Raw"
