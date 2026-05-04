@@ -118,7 +118,7 @@ def iso_process(user_linearity_conditions=False, min_area_threshold=None, includ
     cfg = CorrectionConfig(isotope)
 
     # Setup output folder
-    folder_path, fig_path, results_path, loc, log_file_path = create_folder(isotope)
+    folder_path, fig_path, results_path, loc, log_file_path = create_folder(isotope) #debug
 
     # Set standards
     standards_df = load_standards(isotope)#query_stds(alt_stds, isotope)
