@@ -217,7 +217,10 @@ def iso_process(user_linearity_conditions=False, min_area_threshold=None, includ
 
     # Linearity (area) correction
     drift_std, correction_log, lin_std, samples = process_linearity_correction(cfg, samples,
-        drift_std, lin_std, dD_temp, correction_log, folder_path, fig_path, isotope, user_linearity_conditions, log_file_path=log_file_path, include_parabolic=include_parabolic,force_linearity_model=force_linearity_model)
+        drift_std, lin_std, dD_temp, correction_log, 
+        folder_path, fig_path, isotope, user_linearity_conditions, 
+        log_file_path=log_file_path, include_parabolic=include_parabolic,
+        force_linearity_model=force_linearity_model)
 
     # Reference standard correction
     samples, standards = reference_standard_correction(cfg, samples, lin_std, drift_std, correction_log, folder_path, fig_path, log_file_path, isotope, standards_df)

@@ -106,109 +106,108 @@ def is_degenerate(model_func, popt, pcov, x):
 
     return False
 
-# def fit_and_select_best(x, y, include_parabolic):
-#     x = np.asarray(x, float); y = np.asarray(y, float)
-#     order = np.argsort(x)
-#     x = x[order]; y = y[order]
+# def fit_and_select_best(x, y, include_parabolic, force_linearity_model=None):
+#     x = np.asarray(x, float)
+#     y = np.asarray(y, float)
 
+#     order = np.argsort(x)
+#     x = x[order]
+#     y = y[order]
+
+#     # ---- Linear ----
 #     p0_lin = guess_linear_params(x, y)
 #     popt_lin, pcov_lin = curve_fit(linear_func, x, y, p0=p0_lin, maxfev=2_000_000)
 #     sse_lin = np.sum((y - linear_func(x, *popt_lin))**2)
 
+#     # ---- Exponential decay ----
 #     p0_dec = guess_decay_params(x, y)
 #     popt_dec, pcov_dec = curve_fit(
 #         exp_decay, x, y, p0=p0_dec,
 #         bounds=([0, 0, -np.inf], [np.inf, np.inf, np.inf]),
-#         maxfev=2_000_000)
+#         maxfev=2_000_000
+#     )
 #     sse_dec = np.sum((y - exp_decay(x, *popt_dec))**2)
 
+#     # ---- Exponential growth ----
 #     p0_gro = guess_growth_params(x, y)
 #     popt_gro, pcov_gro = curve_fit(
 #         exp_growth, x, y, p0=p0_gro,
 #         bounds=([0, 0, -np.inf], [np.inf, np.inf, np.inf]),
-#         maxfev=2_000_000)
+#         maxfev=2_000_000
+#     )
 #     sse_gro = np.sum((y - exp_growth(x, *popt_gro))**2)
 
 #     models = [
-#         ("linear", popt_lin, pcov_lin, sse_lin),
-#         ("decay", popt_dec, pcov_dec, sse_dec),
-#         ("growth", popt_gro, pcov_gro, sse_gro),]
+#         ("linear", linear_func, popt_lin, pcov_lin, sse_lin),
+#         ("decay", exp_decay, popt_dec, pcov_dec, sse_dec),
+#         ("growth", exp_growth, popt_gro, pcov_gro, sse_gro),
+#     ]
 
+#     # ---- Optional parabolic ----
 #     if include_parabolic:
 #         p0_par = guess_parabolic_params(x, y)
 #         popt_par, pcov_par = curve_fit(
-#             parabolic_func, x, y, p0=p0_par, maxfev=2_000_000)
+#             parabolic_func, x, y, p0=p0_par, maxfev=2_000_000
+#         )
 #         sse_par = np.sum((y - parabolic_func(x, *popt_par))**2)
 
-#         models.append(("parabolic", popt_par, pcov_par, sse_par))
+#         models.append(("parabolic", parabolic_func, popt_par, pcov_par, sse_par))
 
-#     # sort models by SSE
-#     models_sorted = sorted(models, key=lambda m: m[3])
+#     # ---- Sort by SSE ----
+#     models_sorted = sorted(models, key=lambda m: m[4])
 
-#     # choose first non-degenerate model
-#     for model, popt, pcov, sse in models_sorted:
-#         if not is_degenerate(model, popt, pcov, x):
-#             return model, popt, sse, pcov
+#     # ---- Choose first non-degenerate model ----
+#     for name, func, popt, pcov, sse in models_sorted:
+#         if not is_degenerate(func, popt, pcov, x):
+#             return name, popt, sse, pcov
 
-#     # fallback (all degenerate)
-#     model, popt, pcov, sse = models_sorted[0]
-#     return model, popt, sse, pcov
-def fit_and_select_best(x, y, include_parabolic):
+#     # ---- Fallback (if all degenerate) ----
+#     name, func, popt, pcov, sse = models_sorted[0]
+#     return name, popt, sse, pcov
+
+def fit_and_select_best(x, y, include_parabolic, force_linearity_model=None):
     x = np.asarray(x, float)
     y = np.asarray(y, float)
-
     order = np.argsort(x)
     x = x[order]
     y = y[order]
-
-    # ---- Linear ----
-    p0_lin = guess_linear_params(x, y)
-    popt_lin, pcov_lin = curve_fit(linear_func, x, y, p0=p0_lin, maxfev=2_000_000)
-    sse_lin = np.sum((y - linear_func(x, *popt_lin))**2)
-
-    # ---- Exponential decay ----
-    p0_dec = guess_decay_params(x, y)
-    popt_dec, pcov_dec = curve_fit(
-        exp_decay, x, y, p0=p0_dec,
-        bounds=([0, 0, -np.inf], [np.inf, np.inf, np.inf]),
-        maxfev=2_000_000
-    )
-    sse_dec = np.sum((y - exp_decay(x, *popt_dec))**2)
-
-    # ---- Exponential growth ----
-    p0_gro = guess_growth_params(x, y)
-    popt_gro, pcov_gro = curve_fit(
-        exp_growth, x, y, p0=p0_gro,
-        bounds=([0, 0, -np.inf], [np.inf, np.inf, np.inf]),
-        maxfev=2_000_000
-    )
-    sse_gro = np.sum((y - exp_growth(x, *popt_gro))**2)
-
-    models = [
-        ("linear", linear_func, popt_lin, pcov_lin, sse_lin),
-        ("decay", exp_decay, popt_dec, pcov_dec, sse_dec),
-        ("growth", exp_growth, popt_gro, pcov_gro, sse_gro),
-    ]
-
-    # ---- Optional parabolic ----
+    if force_linearity_model is not None:
+        force_linearity_model = force_linearity_model.lower()
+    valid_models = ["linear", "decay", "growth"]
     if include_parabolic:
+        valid_models.append("parabolic")
+    if force_linearity_model is not None and force_linearity_model not in valid_models:
+        raise ValueError(f"force_linearity_model must be one of {valid_models}, got {force_linearity_model!r}")
+    models = []
+    if force_linearity_model is None or force_linearity_model == "linear":
+        p0_lin = guess_linear_params(x, y)
+        popt_lin, pcov_lin = curve_fit(linear_func, x, y, p0=p0_lin, maxfev=2_000_000)
+        sse_lin = np.sum((y - linear_func(x, *popt_lin))**2)
+        models.append(("linear", linear_func, popt_lin, pcov_lin, sse_lin))
+    if force_linearity_model is None or force_linearity_model == "decay":
+        p0_dec = guess_decay_params(x, y)
+        popt_dec, pcov_dec = curve_fit(exp_decay, x, y, p0=p0_dec, bounds=([0, 0, -np.inf], [np.inf, np.inf, np.inf]), maxfev=2_000_000)
+        sse_dec = np.sum((y - exp_decay(x, *popt_dec))**2)
+        models.append(("decay", exp_decay, popt_dec, pcov_dec, sse_dec))
+    if force_linearity_model is None or force_linearity_model == "growth":
+        p0_gro = guess_growth_params(x, y)
+        popt_gro, pcov_gro = curve_fit(exp_growth, x, y, p0=p0_gro, bounds=([0, 0, -np.inf], [np.inf, np.inf, np.inf]), maxfev=2_000_000)
+        sse_gro = np.sum((y - exp_growth(x, *popt_gro))**2)
+        models.append(("growth", exp_growth, popt_gro, pcov_gro, sse_gro))
+    if include_parabolic and (force_linearity_model is None or force_linearity_model == "parabolic"):
         p0_par = guess_parabolic_params(x, y)
-        popt_par, pcov_par = curve_fit(
-            parabolic_func, x, y, p0=p0_par, maxfev=2_000_000
-        )
+        popt_par, pcov_par = curve_fit(parabolic_func, x, y, p0=p0_par, maxfev=2_000_000)
         sse_par = np.sum((y - parabolic_func(x, *popt_par))**2)
-
         models.append(("parabolic", parabolic_func, popt_par, pcov_par, sse_par))
-
-    # ---- Sort by SSE ----
+    if force_linearity_model is not None:
+        name, func, popt, pcov, sse = models[0]
+        if is_degenerate(func, popt, pcov, x):
+            print(f"Warning: forced linearity model {name!r} appears degenerate.")
+        return name, popt, sse, pcov
     models_sorted = sorted(models, key=lambda m: m[4])
-
-    # ---- Choose first non-degenerate model ----
     for name, func, popt, pcov, sse in models_sorted:
         if not is_degenerate(func, popt, pcov, x):
             return name, popt, sse, pcov
-
-    # ---- Fallback (if all degenerate) ----
     name, func, popt, pcov, sse = models_sorted[0]
     return name, popt, sse, pcov
 
