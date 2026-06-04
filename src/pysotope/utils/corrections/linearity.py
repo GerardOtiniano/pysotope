@@ -84,10 +84,15 @@ def process_linearity_correction(
     include_parabolic,
     force_linearity_model=None):
     append_to_log(log_file_path, "Linearity correction")
-    dD_id = isotope
+    print(f"user_choice: {user_choice}")
+    dD_id = user_choice#isotope
+    print(f"Linearity standards: {lin_std}")
+    print(f"Linearty standards col_id: {list(lin_std)}")
+    print(f"y column: {dD_id}")
     norm, norm_meta = build_norm_with_fallback(
         lin_std,
         y_col=dD_id,
+        # y_col=user_choice,
         area_col="area",
         chain_col="chain",
         log_file_path=log_file_path)
@@ -224,7 +229,7 @@ def linearity_correction(
         lin_reference,
         dD_id,
         isotope)
-    
+
     # print(list(filtered_lin_std))
     # fig = plt.figure()
     # plt.scatter(filtered_lin_std['area'], filtered_lin_std['linearity_corrected_dD'])
@@ -234,9 +239,9 @@ def linearity_correction(
     #     temp = filtered_lin_std[filtered_lin_std['chain']==i]
     #     plt.scatter(temp['area'], temp['dD'], c='k')
     #     plt.scatter(temp['area'], temp['linearity_corrected_dD'], c='red')
-        
+
     #     plt.show()
-    
+
     return (
         filtered_lin_std,
         filtered_drift,

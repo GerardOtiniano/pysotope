@@ -214,11 +214,18 @@ def iso_process(user_linearity_conditions=False, min_area_threshold=None, includ
 
     # # Show plots again
     # std_plot(lin_std, drift_std, folder_path=folder_path, fig_path=fig_path, dD=dD_temp,isotope=isotope)
-
     # Linearity (area) correction
-    drift_std, correction_log, lin_std, samples = process_linearity_correction(cfg, samples,
-        drift_std, lin_std, dD_temp, correction_log, 
-        folder_path, fig_path, isotope, user_linearity_conditions, 
+    print(cfg)
+    print(dD_temp)
+    print(correction_log)
+    drift_std, correction_log, lin_std, samples = process_linearity_correction(
+        cfg, # configuration file
+        samples, # samples to process
+        drift_std, # drift standards
+        lin_std, # linearity standards
+        dD_temp, # isotope type
+        correction_log, # Corrections applied
+        folder_path, fig_path, isotope, user_linearity_conditions,
         log_file_path=log_file_path, include_parabolic=include_parabolic,
         force_linearity_model=force_linearity_model)
 
