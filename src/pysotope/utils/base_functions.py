@@ -86,7 +86,11 @@ def create_subfolder(folder_path, name):
 
 
 def load_standards(isotope: str = 'dD') -> pd.DataFrame:
-    from ..standards_manager.editor import get_standard_path, standard_editor
+    from ..standards_manager.editor import (
+        _coerce_bool_series,
+        get_standard_path,
+        standard_editor,
+    )
 
     path = get_standard_path(f'gcirms_RS_{isotope}.csv')
     if not path.exists():
@@ -94,8 +98,10 @@ def load_standards(isotope: str = 'dD') -> pd.DataFrame:
         return standard_editor()
 
     df = pd.read_csv(path, dtype={'type': str, 'chain length': str})
-    df = df[df['Use as Standard'] == True]
-    df = df[df['Use as Standard'] != False]
-    df['RS accuracy check'] = df['RS accuracy check'].astype(str).str.lower() == 'true'
-    df['Use as Standard'] = df['Use as Standard'].astype(str).str.lower() == 'true'
+    for col in ("RS accuracy check", "Use as Standard"):
+        if col not in df.columns:
+            raise ValueError(f"{path.name} is missing required column: {col}")
+        df[col] = _coerce_bool_series(df[col])
+
+    df = df[df['Use as Standard']].copy()
     return df

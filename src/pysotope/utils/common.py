@@ -31,13 +31,13 @@ def id_mask(df: pd.DataFrame, ids, col="Identifier 1", mode="all"):
     if mode == "all":
         mask = pd.Series(True, index=df.index)
         for value in ids:
-            mask &= series.str.contains(value, na=False)
+            mask &= series.str.contains(value, regex=False, na=False)
         return mask
 
     if mode == "any":
         mask = pd.Series(False, index=df.index)
         for value in ids:
-            mask |= series.str.contains(value, na=False)
+            mask |= series.str.contains(value, regex=False, na=False)
         return mask
 
     raise ValueError("mode must be 'all' or 'any'")

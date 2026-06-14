@@ -2,7 +2,7 @@
 [![Documentation Status](https://readthedocs.org/projects/pysotope/badge/?version=latest)](https://pysotope.readthedocs.io/en/latest/?badge=latest)
 [![Pysotope Logo](misc/logo.png)](https://github.com/GerardOtiniano/pysotope/blob/main/misc/logo.png)
 
-# pysotope (v.1.13.5).
+# pysotope (v.1.14.0)
 
 Pysotope is an open-source package meant to processes raw data measured from the OSIBL GC-IRMS. Corrections are automatically calculated but the user must verify and confirm their application.
 

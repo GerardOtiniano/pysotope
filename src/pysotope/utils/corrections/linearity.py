@@ -84,11 +84,8 @@ def process_linearity_correction(
     include_parabolic,
     force_linearity_model=None):
     append_to_log(log_file_path, "Linearity correction")
-    print(f"user_choice: {user_choice}")
+    append_to_log(log_file_path, f"- Linearity applied to {user_choice} isotope values")
     dD_id = user_choice#isotope
-    print(f"Linearity standards: {lin_std}")
-    print(f"Linearty standards col_id: {list(lin_std)}")
-    print(f"y column: {dD_id}")
     norm, norm_meta = build_norm_with_fallback(
         lin_std,
         y_col=dD_id,

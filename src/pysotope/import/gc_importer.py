@@ -145,19 +145,16 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     else:
         raise ValueError('Unsupported isotope system.')
 
-    column_found = False
-    for idx, name in enumerate([str(iso_rat), 'Area All', 'Component']):
-        if name in df.columns:
-            df = df.rename(columns={df.columns[df.columns.str.contains(name)][0]: new_names[idx]})
-            column_found = True
-        else:
-            df[new_names[idx]] = np.nan
-
-    if not column_found:
+    required = ["Date", "Time", "Identifier 1", iso_rat, "Area All", "Component"]
+    missing = [col for col in required if col not in df.columns]
+    if missing:
         raise ValueError(
-            'The expected header for the isotope system was not found in the csv file. '
-            'Please verify the isotope system of interest.'
+            "The raw GC-IRMS file is missing required column(s): "
+            f"{', '.join(missing)}"
         )
+
+    for idx, name in enumerate([str(iso_rat), 'Area All', 'Component']):
+        df = df.rename(columns={name: new_names[idx]})
 
     df['date-time_true'] = df.apply(lambda row: try_parse_date(row['Date'] + ' ' + row['Time']), axis=1)
     df['date-time'] = date2num(df['date-time_true'])
@@ -188,7 +185,7 @@ def import_data(data_location, folder_path, log_file_path, isotope, standards_df
     unknown = df[~mask]
     mask = id_mask(unknown, drift_ids, col='Identifier 1', mode='all')
     unknown = unknown[~mask]
-    unknown = unknown[~unknown['Identifier 1'].str.contains('H3+')]
+    unknown = unknown[~unknown['Identifier 1'].str.contains('H3+', regex=False, na=False)]
 
     rt_dict = ask_user_for_rt(log_file_path, df, isotope)
     if rt_dict:

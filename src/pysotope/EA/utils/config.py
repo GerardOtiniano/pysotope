@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class CorrectionConfig:
     """
-    Configuration object storing whether isotopic drift corrections have been applied.
+    Configuration object storing which EA isotope corrections have been applied.
 
     Attributes
     ----------
@@ -12,20 +12,20 @@ class CorrectionConfig:
         True if drift correction for Carbon has been applied; otherwise False.
     drift_N_applied : bool, default=False
         True if drift correction for Nitrogen has been applied; otherwise False.
+    linearity_C_applied : bool, default=False
+        True if linearity correction for Carbon has been applied; otherwise False.
+    linearity_N_applied : bool, default=False
+        True if linearity correction for Nitrogen has been applied; otherwise False.
 
     Properties
     ----------
     dN_col : str
-        Returns the appropriate column name for Nitrogen isotope data depending
-        on whether drift correction has been applied.
-        - Returns "d 15N/14N_corr" if Nitrogen drift correction applied.
-        - Returns "d 15N/14N" otherwise.
+        Returns the current Nitrogen isotope-value column and a description.
+        The order is linearity-corrected, drift-corrected, then raw.
 
     dC_col : str
-        Returns the appropriate column name for Carbon isotope data depending
-        on whether drift correction has been applied.
-        - Returns "d 13C/12C_corr" if Carbon drift correction applied.
-        - Returns "d 13C/12C" otherwise.
+        Returns the current Carbon isotope-value column and a description.
+        The order is linearity-corrected, drift-corrected, then raw.
     """
 
     drift_C_applied: bool = False
@@ -37,12 +37,12 @@ class CorrectionConfig:
     def dN_col(self) -> str:
         """
         Return the appropriate column name for Nitrogen isotope data depending
-        on whether drift correction has been applied.
+        on which correction has been applied.
 
         Returns
         -------
-        str
-            "d 15N/14N_corr" if Nitrogen drift correction applied; otherwise "d 15N/14N".
+        tuple[str, str]
+            The current Nitrogen isotope-value column and a short description.
         """
 
         if self.linearity_N_applied:
@@ -55,12 +55,12 @@ class CorrectionConfig:
     def dC_col(self) -> str:
         """
         Return the appropriate column name for Carbon isotope data depending
-        on whether drift correction has been applied.
+        on which correction has been applied.
 
         Returns
         -------
-        str
-            "d 13C/12C_corr" if Carbon drift correction applied; otherwise "d 13C/12C".
+        tuple[str, str]
+            The current Carbon isotope-value column and a short description.
         """
 
         if self.linearity_C_applied:

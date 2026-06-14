@@ -215,9 +215,6 @@ def iso_process(user_linearity_conditions=False, min_area_threshold=None, includ
     # # Show plots again
     # std_plot(lin_std, drift_std, folder_path=folder_path, fig_path=fig_path, dD=dD_temp,isotope=isotope)
     # Linearity (area) correction
-    print(cfg)
-    print(dD_temp)
-    print(correction_log)
     drift_std, correction_log, lin_std, samples = process_linearity_correction(
         cfg, # configuration file
         samples, # samples to process

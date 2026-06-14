@@ -1,5 +1,8 @@
 .spyproject/config
 .DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/
 .dist
 .src/scrap.py
 .src/pysotope/pysotope_with_3D_plot.py

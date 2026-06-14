@@ -116,6 +116,13 @@ def load_ea_linearity_metadata(tag: str, log_file_path: Optional[str] = None) ->
     selected = df.loc[mask].copy()
     if selected.empty:
         raise ValueError(f"No standards marked for EA linearity correction in {path.name}.")
+    name_col = _get_metadata_name_column(selected)
+    selected_names = selected[name_col].dropna().astype(str).str.strip()
+    selected_names = selected_names[selected_names != ""].tolist()
+    _append_to_log(
+        log_file_path,
+        f"- EA linearity standards selected from {path.name}: {', '.join(selected_names)}.",
+    )
     return selected
 
 

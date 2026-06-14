@@ -1,12 +1,23 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Dict, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+
+
+EA_STANDARDS_DIR_CANDIDATES = [
+    Path(__file__).resolve().parent.parent / "standards_manager" / "EA" / "data",
+    Path(__file__).resolve().parent.parent / "standards_manager" / "data",
+]
+EA_DRIFT_STANDARD_FILES = {
+    "N": "ea_RS_dN.csv",
+    "C": "ea_RS_dC.csv",
+}
 
 
 def _append_to_log(log_file_path: Optional[str], log_message):
@@ -83,6 +94,165 @@ def get_sorghum(df: pd.DataFrame, log_file_path: Optional[str] = None):
     sorghum_c = sorghum[sorghum["Element Type"] == "Carbon"].copy()
     _append_to_log(log_file_path, "'SORGHUM' standards found in the data.")
     return sorghum_n, sorghum_c
+
+
+def _truthy_mask(series: pd.Series) -> pd.Series:
+    return (
+        series.astype(str)
+        .str.strip()
+        .str.lower()
+        .isin({"true", "1", "1.0", "yes", "y", "t"})
+    )
+
+
+def _get_ea_standards_dir() -> Path:
+    for path in EA_STANDARDS_DIR_CANDIDATES:
+        if path.exists():
+            return path
+    return EA_STANDARDS_DIR_CANDIDATES[-1]
+
+
+def _load_ea_drift_metadata(tag: str) -> pd.DataFrame:
+    isotope_tag = tag.upper()
+    if isotope_tag not in EA_DRIFT_STANDARD_FILES:
+        raise ValueError(f"Unknown EA drift isotope tag: {tag}")
+
+    path = _get_ea_standards_dir() / EA_DRIFT_STANDARD_FILES[isotope_tag]
+    if not path.exists():
+        raise FileNotFoundError(f"EA drift standards file not found: {path}")
+
+    metadata = pd.read_csv(path, encoding="unicode_escape")
+    if "ID" not in metadata.columns:
+        raise ValueError(f"{path.name} is missing required column: ID")
+    if "drift" not in metadata.columns:
+        raise ValueError(
+            f"{path.name} is missing required column: drift. "
+            "Add a 'drift' checkbox column with pysotope.standard_editor()."
+        )
+    return metadata[_truthy_mask(metadata["drift"])].copy()
+
+
+def get_ea_drift_standards(df: pd.DataFrame, tag: str, log_file_path: Optional[str] = None):
+    metadata = _load_ea_drift_metadata(tag)
+    _, _, element, _ = get_isotope(tag)
+
+    if metadata.empty:
+        raise ValueError(f"No {element} EA standards are selected for drift correction.")
+
+    ids = metadata["ID"].dropna().astype(str).str.strip()
+    ids = ids[ids != ""].tolist()
+    if not ids:
+        raise ValueError(f"No valid {element} EA drift standard IDs found.")
+
+    id_values = df["Identifier 1"].astype(str).str.strip().str.lower()
+    selected_ids = {std_id.lower() for std_id in ids}
+    drift_standards = df[
+        id_values.isin(selected_ids) & (df["Element Type"] == element)
+    ].copy()
+
+    if drift_standards.empty:
+        msg = f"No selected {element} EA drift standards found in the data: {', '.join(ids)}."
+        _append_to_log(log_file_path, f"Error: {msg}")
+        raise ValueError(msg)
+
+    _append_to_log(log_file_path, f"Selected EA {element} drift standard(s): {', '.join(ids)}.")
+    return drift_standards
+
+
+def _standard_name_column(df: pd.DataFrame) -> str:
+    for col in ("EA-IRMS Standards", "ID", "Identifier 1", "Name"):
+        if col in df.columns:
+            return col
+    raise ValueError("EA standards table does not contain a recognizable standard-name column.")
+
+
+def _normalized_names(values) -> dict[str, str]:
+    names = {}
+    for value in values:
+        if pd.isna(value):
+            continue
+        name = str(value).strip()
+        if name:
+            names[name.lower()] = name
+    return names
+
+
+def _parse_indices(idx_str: str) -> list[int]:
+    return [int(idx.strip()) for idx in idx_str.split(",") if idx.strip()]
+
+
+def review_ea_reference_standards(
+    df: pd.DataFrame,
+    carbon_standards: pd.DataFrame,
+    nitrogen_standards: pd.DataFrame,
+    log_file_path: Optional[str] = None,
+):
+    while True:
+        choice = input("Check and/or remove any standard measurements? [Y/N]\n").strip().lower()
+        if choice in {"yes", "y", "true", "t"}:
+            break
+        if choice in {"no", "n", "false", "f", ""}:
+            _append_to_log(log_file_path, "No reference standard measurements removed")
+            return
+        print("Wrong input. Please enter Y or N.")
+
+    removed_rows = []
+    for tag, standards in (("N", nitrogen_standards), ("C", carbon_standards)):
+        col, _, element, _ = get_isotope(tag)
+        name_col = _standard_name_column(standards)
+        standard_names = _normalized_names(standards[name_col])
+
+        present_keys = (
+            df.loc[df["Element Type"] == element, "Identifier 1"]
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            .unique()
+        )
+        present = [standard_names[key] for key in standard_names if key in present_keys]
+
+        for standard_name in present:
+            mask = (
+                (df["Element Type"] == element) &
+                (df["Identifier 1"].astype(str).str.strip().str.lower() == standard_name.lower())
+            )
+            sub = df.loc[mask, ["Identifier 1", "Time", col]].copy()
+            if sub.empty:
+                continue
+
+            print("")
+            print(f"{element} reference standard: {standard_name}")
+            print(sub)
+            idx_str = input(
+                "Enter indices to remove in a comma-separated manner. "
+                "(Enter None if no values are to be removed)\n"
+            ).strip()
+            if not idx_str or idx_str.lower() == "none":
+                continue
+
+            try:
+                idxs = _parse_indices(idx_str)
+            except ValueError:
+                print("Invalid index list. Please use comma-separated integer index values.")
+                continue
+
+            valid_idxs = [idx for idx in idxs if idx in df.index and idx in sub.index]
+            invalid_idxs = sorted(set(idxs).difference(valid_idxs))
+            if invalid_idxs:
+                print(f"Ignoring invalid index value(s): {invalid_idxs}")
+
+            if valid_idxs:
+                removed = df.loc[valid_idxs, ["Identifier 1", "Time", col]].copy()
+                removed.insert(0, "Element Type", element)
+                removed_rows.append(removed)
+                df.drop(valid_idxs, inplace=True, errors="ignore")
+
+    if removed_rows:
+        removed_df = pd.concat(removed_rows).sort_index()
+        _append_to_log(log_file_path, "Removed reference standard runs")
+        _append_to_log(log_file_path, removed_df)
+    else:
+        _append_to_log(log_file_path, "Removed reference standard runs: None")
 
 
 def drop_standards(std_df: pd.DataFrame, df: pd.DataFrame, tag: str, log_file_path: Optional[str] = None):

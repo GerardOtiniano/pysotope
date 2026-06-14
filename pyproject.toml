@@ -1,11 +1,15 @@
 [tool.poetry]
 name = "pysotope"
-version = "1.13.5"
+version = "1.14.0"
 license = "MIT"
 description = "Pysotope is an open-source package meant to processes raw data measured from the OSIBL GC-IRMS. Corrections are automatically calculated but the user must verify and confirm their application."
 authors = ["Dr. Gerard Otiniano <gerardotiniano@gmail.com>", "Dr. Elizabeth Thomas"]
 readme = "README.md"
 packages = [{include = "pysotope", from = "src"}]
+include = [
+    "src/pysotope/standards_manager/data/*.csv",
+    "src/pysotope/utils/chains/chains.json",
+]
 
 [tool.poetry.dependencies]
 python      = ">= 3.10, < 3.13"
@@ -21,6 +25,3 @@ pandas = "2.3.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[options.package_data]
-pysotope.utils = ["vsmow_standards/*.csv"]

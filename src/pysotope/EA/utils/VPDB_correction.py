@@ -8,6 +8,11 @@ from . .base_functions import append_to_log
 
 log_file_path = fig = None
 
+
+def _scale_name(tag):
+    return "AIR" if "N" in tag.upper() else "VPDB"
+
+
 def VPDB_correction(df, C_std, N_std, cfg, log_file, fig_dir):
     """
     Perform VPDB calibration on isotopic ratios for Nitrogen and Carbon.
@@ -50,7 +55,7 @@ def VPDB_correction(df, C_std, N_std, cfg, log_file, fig_dir):
     fig = fig_dir
     log_file_path = log_file
 
-    msg = "\n\nVPDB Calibration:\n"
+    msg = "\n\nReference Standard Calibration:\n"
     append_to_log(log_file_path, msg)
     print(msg)
 
@@ -96,7 +101,7 @@ def standardize(df, standards, tag, option, vpdb_ids):
 
     if option == "std":
         selected_ids = vpdb_ids["model"]
-        label = "VPDB calibration"
+        label = f"{_scale_name(tag)} calibration"
     elif option == "check":
         selected_ids = vpdb_ids["check"]
         label = "RS accuracy check"
@@ -198,7 +203,7 @@ def get_isotope(tag, cfg):
             Extracted from 'cfg' depending on drift correction.
         output_col : str
             Name of the columns where the VPDB calibrated values will be outputted into
-            (e.g., "VPDB_d15N/14N", "VPDB_d13C/12C").
+            (e.g., "AIR_corr_d15N/14N", "VPDB_corr_d13C/12C").
         actual_col : str
             Name of the column containing actual standard values
             (e.g., 'd15N(AIR) value', 'd13C(VPDB) value').
@@ -216,7 +221,7 @@ def get_isotope(tag, cfg):
     """
 
     if "N" in tag.upper():
-        return cfg.dN_col[0], cfg.dN_col[1], "VPDB_corr_d15N/14N", 'd15N(AIR) value', r"$\delta^{15}\mathrm{N}$", "Nitrogen"
+        return cfg.dN_col[0], cfg.dN_col[1], "AIR_corr_d15N/14N", 'd15N(AIR) value', r"$\delta^{15}\mathrm{N}$", "Nitrogen"
     elif "C" in tag.upper():
         return cfg.dC_col[0], cfg.dC_col[1], "VPDB_corr_d13C/12C", 'd13C(VPDB) value', r"$\delta^{13}\mathrm{C}$", "Carbon"
     else:
@@ -272,7 +277,8 @@ def VPDB_model(df, cfg, tag, check_df, vpdb_ids):
     - Calls 'plot_drift_correction' to generate calibration plots.
     """
     input_col, input_description, output_col, actual_col, iso_label, el = get_isotope(tag, cfg)
-    append_to_log(log_file_path, f"\nVPDB Calibration Model for {el}: ")
+    scale = _scale_name(tag)
+    append_to_log(log_file_path, f"\n{scale} Calibration Model for {el}: ")
 
     # WLS model
     meas = df[input_col].to_numpy()
@@ -325,7 +331,7 @@ def VPDB_model(df, cfg, tag, check_df, vpdb_ids):
     append_to_log(log_file_path, f"Root Mean Squared Error (RMSE): {rmse_msg}\n")
 
     if check_df.empty:
-        append_to_log(log_file_path, "No RS accuracy-check standards available for VPDB model testing.")
+        append_to_log(log_file_path, f"No RS accuracy-check standards available for {scale} model testing.")
 
         mean = y.mean()
         combined_df = df.copy()
@@ -337,7 +343,7 @@ def VPDB_model(df, cfg, tag, check_df, vpdb_ids):
 
         append_to_log(
             log_file_path,
-            f"Testing VPDB Calibration on RS accuracy-check standard(s): {', '.join(check_names)}"
+            f"Testing {scale} Calibration on RS accuracy-check standard(s): {', '.join(check_names)}"
         )
 
         vals_check = check_df[input_col].to_numpy()
@@ -380,6 +386,7 @@ def VPDB_model(df, cfg, tag, check_df, vpdb_ids):
         actual_col,
         output_col,
         iso_label,
+        scale,
         slope,
         intercept,
     )
@@ -394,6 +401,7 @@ def plot_VPDB_calibration(
     actual_col,
     output_col,
     iso_label,
+    scale,
     slope=None,
     intercept=None,
     input_col=None,
@@ -518,8 +526,8 @@ def plot_VPDB_calibration(
             label="1:1",
         )
 
-    plt.xlabel(f"Actual {iso_label} (‰, VPDB)")
-    plt.ylabel(f"Predicted {iso_label} (‰, VPDB)")
+    plt.xlabel(f"Actual {iso_label} (‰, {scale})")
+    plt.ylabel(f"Predicted {iso_label} (‰, {scale})")
     plt.legend()
     plt.tight_layout()
 
@@ -569,7 +577,8 @@ def plot_VPDB_calibration_applied(df, identifiers, el, actual_col, output_col, i
 
     x = df[output_col].to_numpy()
     colors = plt.cm.tab10.colors
-    plot_id = "VPDB"
+    scale = "AIR" if output_col.startswith("AIR_") else "VPDB"
+    plot_id = scale
     standard_ids = [x for x in identifiers if x != "sample"]
 
     for i, identifier in enumerate(identifiers):
@@ -590,7 +599,7 @@ def plot_VPDB_calibration_applied(df, identifiers, el, actual_col, output_col, i
         plt.scatter(x, y, label=label, marker=marker, color=colors[i % len(colors)], alpha=0.75, s=100, ec=edgecolor)
 
     plt.xlabel(f"Measured ({input_description}) {iso_label} (‰)")
-    plt.ylabel(f"VPDB-calibrated {iso_label} (‰)")
+    plt.ylabel(f"{scale}-calibrated {iso_label} (‰)")
     plt.legend()
     plt.tight_layout()
     fig_name = f"{plot_id}_{el}.png"
@@ -658,7 +667,7 @@ def apply_vpdb_calibration(df, model, rel, cfg, tag, slope, intercept, vpdb_ids)
         input_col,
         input_description)
     rows = df[output_col].notna().sum()
-    msg = f"VPDB calibration applied to {el}:\n  {tag} rows calibrated: {rows}"
+    msg = f"{_scale_name(tag)} calibration applied to {el}:\n  {tag} rows calibrated: {rows}"
     print(msg)
     append_to_log(log_file_path, msg)
 
@@ -694,11 +703,13 @@ def _coerce_bool_series(s):
               "yes": True,
               "y": True,
               "1": True,
+              "1.0": True,
               "false": False,
               "f": False,
               "no": False,
               "n": False,
               "0": False,
+              "0.0": False,
               "": False,
               "nan": False,
           })

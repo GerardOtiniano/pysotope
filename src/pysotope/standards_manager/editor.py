@@ -39,6 +39,7 @@ BOOL_COLS = {
     "RS accuracy check",
     "Use as Standard",
     "Linearity Standard",
+    "drift",
 }
 
 CELL_LAYOUT = widgets.Layout(width="140px")
@@ -66,7 +67,7 @@ def _coerce_bool_series(series: pd.Series) -> pd.Series:
         series.astype(str)
         .str.strip()
         .str.lower()
-        .isin(["true", "1", "yes", "y", "t"])
+        .isin(["true", "1", "1.0", "yes", "y", "t"])
     )
 
 # def _make_widget_for_value(val, is_bool=False):
